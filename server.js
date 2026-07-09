@@ -43,7 +43,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(sensitiveFieldsMasker); // Compliance output masking filter
 
 // Serve file uploads statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const serveUploadsDir = process.env.VERCEL === '1'
+  ? '/tmp/uploads'
+  : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(serveUploadsDir));
 
 // Root route
 app.get('/', (req, res) => {

@@ -2,13 +2,18 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const isVercel = process.env.VERCEL === '1';
+const uploadDir = isVercel
+  ? '/tmp/uploads'
+  : path.join(__dirname, '..', 'uploads');
+
 // Ensure upload folders exist
 const createFolders = () => {
   const dirs = [
-    path.join(__dirname, '../uploads'),
-    path.join(__dirname, '../uploads/profiles'),
-    path.join(__dirname, '../uploads/kyc'),
-    path.join(__dirname, '../uploads/selfies')
+    uploadDir,
+    path.join(uploadDir, 'profiles'),
+    path.join(uploadDir, 'kyc'),
+    path.join(uploadDir, 'selfies')
   ];
 
   dirs.forEach(dir => {
@@ -23,15 +28,15 @@ createFolders();
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let folder = 'uploads/';
+    let folder = '';
     if (file.fieldname === 'profilePicture') {
-      folder += 'profiles/';
+      folder = 'profiles';
     } else if (file.fieldname === 'selfie') {
-      folder += 'selfies/';
+      folder = 'selfies';
     } else {
-      folder += 'kyc/';
+      folder = 'kyc';
     }
-    cb(null, path.join(__dirname, '..', folder));
+    cb(null, path.join(uploadDir, folder));
   },
   filename: (req, file, cb) => {
     // Generate unique name: fieldname-userId-timestamp.ext
