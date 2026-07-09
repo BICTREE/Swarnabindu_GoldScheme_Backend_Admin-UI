@@ -244,13 +244,13 @@ const clientProfileFolder = {
       method: 'PUT',
       path: '/user/kyc/address',
       authType: 'bearer',
-      body: { type: 'json', data: { houseName: 'Green Villa', street: 'MG Road', city: 'Kochi', state: 'Kerala', pinCode: '682001', latitude: 9.9816, longitude: 76.2999 } },
+      body: { type: 'json', data: { houseName: 'Green Villa', street: 'MG Road', city: 'Kochi', district: 'Ernakulam', state: 'Kerala', pinCode: '682001', latitude: 9.9816, longitude: 76.2999 } },
       responses: [
         makeResponse({
           name: 'Success - Address Saved',
           status: 'OK',
           code: 200,
-          body: { success: true, message: 'KYC Step 3: Address information updated successfully', errorCode: null, data: { kycStatus: 'PENDING', addressInfo: { houseName: 'Green Villa', street: 'MG Road', city: 'Kochi', state: 'Kerala', pinCode: '682001' } } }
+          body: { success: true, message: 'KYC Step 3: Address information updated successfully', errorCode: null, data: { kycStatus: 'PENDING', addressInfo: { houseName: 'Green Villa', street: 'MG Road', city: 'Kochi', district: 'Ernakulam', state: 'Kerala', pinCode: '682001' } } }
         })
       ]
     }),

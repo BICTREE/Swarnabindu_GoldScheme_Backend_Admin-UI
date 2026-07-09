@@ -510,7 +510,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"houseName\": \"Green Villa\",\n  \"street\": \"MG Road\",\n  \"city\": \"Kochi\",\n  \"state\": \"Kerala\",\n  \"pinCode\": \"682001\",\n  \"latitude\": 9.9816,\n  \"longitude\": 76.2999\n}",
+                  "raw": "{\n  \"houseName\": \"Green Villa\",\n  \"street\": \"MG Road\",\n  \"city\": \"Kochi\",\n  \"district\": \"Ernakulam\",\n  \"state\": \"Kerala\",\n  \"pinCode\": \"682001\",\n  \"latitude\": 9.9816,\n  \"longitude\": 76.2999\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -537,7 +537,7 @@
                       "value": "application/json"
                     }
                   ],
-                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC Step 3: Address information updated successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"PENDING\",\n    \"addressInfo\": {\n      \"houseName\": \"Green Villa\",\n      \"street\": \"MG Road\",\n      \"city\": \"Kochi\",\n      \"state\": \"Kerala\",\n      \"pinCode\": \"682001\"\n    }\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC Step 3: Address information updated successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"PENDING\",\n    \"addressInfo\": {\n      \"houseName\": \"Green Villa\",\n      \"street\": \"MG Road\",\n      \"city\": \"Kochi\",\n      \"district\": \"Ernakulam\",\n      \"state\": \"Kerala\",\n      \"pinCode\": \"682001\"\n    }\n  }\n}"
                 }
               ]
             },

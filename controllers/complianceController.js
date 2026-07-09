@@ -225,6 +225,7 @@ const requestErasure = async (req, res, next) => {
         houseName: 'Anonymized',
         street: 'Anonymized',
         city: 'Anonymized',
+        district: 'Anonymized',
         state: 'Anonymized',
         pinCode: '000000'
       };

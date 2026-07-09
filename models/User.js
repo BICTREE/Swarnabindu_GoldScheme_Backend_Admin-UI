@@ -44,6 +44,7 @@ const UserSchema = new mongoose.Schema({
       street: { type: String, default: null },
       landmark: { type: String, default: null },
       city: { type: String, default: null },
+      district: { type: String, default: null },
       state: { type: String, default: null },
       pinCode: { type: String, default: null },
       locationCoordinates: {

@@ -53,6 +53,7 @@ beforeAll(async () => {
         houseName: 'Green Villa',
         street: 'MG Road',
         city: 'Kochi',
+        district: 'Ernakulam',
         state: 'Kerala',
         pinCode: '682001'
       },

@@ -420,7 +420,7 @@ export default function UsersList() {
                   {selectedUser.kycDetails?.addressInfo?.houseName}, {selectedUser.kycDetails?.addressInfo?.street}
                 </p>
                 <p className="text-obsidian-200">
-                  {selectedUser.kycDetails?.addressInfo?.city}, {selectedUser.kycDetails?.addressInfo?.state} - {selectedUser.kycDetails?.addressInfo?.pinCode}
+                  {selectedUser.kycDetails?.addressInfo?.city}, {selectedUser.kycDetails?.addressInfo?.district ? `${selectedUser.kycDetails.addressInfo.district}, ` : ''}{selectedUser.kycDetails?.addressInfo?.state} - {selectedUser.kycDetails?.addressInfo?.pinCode}
                 </p>
               </div>
             </div>

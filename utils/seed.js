@@ -118,6 +118,7 @@ const seedDatabase = async () => {
           houseName: 'Green Villa',
           street: 'MG Road',
           city: 'Kochi',
+          district: 'Ernakulam',
           state: 'Kerala',
           pinCode: '682001'
         },
@@ -161,6 +162,7 @@ const seedDatabase = async () => {
           houseName: 'Sector 4',
           street: 'Cyber Highway',
           city: 'Bangalore',
+          district: 'Bangalore',
           state: 'Karnataka',
           pinCode: '560001'
         },

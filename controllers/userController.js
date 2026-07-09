@@ -28,6 +28,7 @@ const addressSchema = Joi.object({
   street: Joi.string().required(),
   landmark: Joi.string().optional().allow(null, ''),
   city: Joi.string().required(),
+  district: Joi.string().required(),
   state: Joi.string().required(),
   pinCode: Joi.string().length(6).pattern(/^\d+$/).required(),
   latitude: Joi.number().optional().allow(null),
@@ -257,7 +258,7 @@ const updateIdentityKyc = async (req, res, next) => {
  */
 const updateAddressKyc = async (req, res, next) => {
   try {
-    const { houseName, street, landmark, city, state, pinCode, latitude, longitude } = req.body;
+    const { houseName, street, landmark, city, district, state, pinCode, latitude, longitude } = req.body;
 
     const { error } = addressSchema.validate(req.body);
     if (error) {
@@ -275,6 +276,7 @@ const updateAddressKyc = async (req, res, next) => {
     user.kycDetails.addressInfo.street = street;
     user.kycDetails.addressInfo.landmark = landmark || null;
     user.kycDetails.addressInfo.city = city;
+    user.kycDetails.addressInfo.district = district;
     user.kycDetails.addressInfo.state = state;
     user.kycDetails.addressInfo.pinCode = pinCode;
 

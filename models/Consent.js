@@ -9,7 +9,7 @@ const ConsentSchema = new mongoose.Schema({
   },
   consentType: {
     type: String,
-    enum: ['KYC', 'BIOMETRIC', 'MARKETING'],
+    enum: ['KYC', 'BIOMETRIC', 'MARKETING', 'KYC_SHARING'],
     required: true
   },
   purpose: {

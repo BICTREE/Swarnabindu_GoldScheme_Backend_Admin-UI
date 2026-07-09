@@ -114,6 +114,7 @@ async function runTests() {
         street: 'MG Road',
         landmark: 'Near Metro Station',
         city: 'Kochi',
+        district: 'Ernakulam',
         state: 'Kerala',
         pinCode: '682001',
         latitude: 9.9816,

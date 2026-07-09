@@ -121,7 +121,7 @@ async function runAdminTests() {
       method: 'PUT',
       headers: { ...clientHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        houseName: 'Green Villa', street: 'MG Road', city: 'Kochi', state: 'Kerala', pinCode: '682001'
+        houseName: 'Green Villa', street: 'MG Road', city: 'Kochi', district: 'Ernakulam', state: 'Kerala', pinCode: '682001'
       })
     });
 

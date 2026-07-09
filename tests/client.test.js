@@ -162,6 +162,7 @@ describe('Swarna Bindu Client REST API Integration Tests', () => {
           houseName: 'Green Villa',
           street: 'MG Road',
           city: 'Kochi',
+          district: 'Ernakulam',
           state: 'Kerala',
           pinCode: '682001'
         });
