@@ -6,6 +6,8 @@ const { adminProtect, requireRole } = require('../../middleware/roleMiddleware')
 // Protect all routes under admin users
 router.use(adminProtect);
 
+
+
 // KYC Moderation routes (placed before ID routes to avoid conflict)
 router.get('/kyc/pending', requireRole(['SUPER_ADMIN', 'MODERATOR', 'SUPPORT']), adminUserController.getPendingKyc);
 router.post('/kyc/:id/approve', requireRole(['SUPER_ADMIN', 'MODERATOR']), adminUserController.approveKyc);
