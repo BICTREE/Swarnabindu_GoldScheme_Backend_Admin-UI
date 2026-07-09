@@ -52,6 +52,7 @@ const UserSchema = new mongoose.Schema({
         coordinates: { type: [Number], default: [0, 0] }
       }
     },
+    
     bankDetails: {
       accountHolderName: { type: String, default: null },
       bankName: { type: String, default: null },
