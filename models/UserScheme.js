@@ -37,6 +37,7 @@ const UserSchemeSchema = new mongoose.Schema({
   endDate: {
     type: Date,
     required: true
+    
   },
   goalGoldGram: {
     type: Number,
