@@ -3,6 +3,7 @@ const UserScheme = require('../models/UserScheme');
 const User = require('../models/User');
 const GoldRate = require('../models/GoldRate');
 const helpers = require('../utils/helpers');
+const { sendNewSchemeJoinedWhatsApp } = require('../utils/whatsappService');
 
 /**
  * @desc    Get all available schemes (paginated)
@@ -149,6 +150,16 @@ const joinScheme = async (req, res, next) => {
       `Welcome to ${scheme.name}! Your monthly savings target is ₹${scheme.monthlyInvestment}.`,
       'GOLD_PURCHASE'
     );
+
+    // Send WhatsApp New Scheme Subscription Confirmation
+    sendNewSchemeJoinedWhatsApp({
+      mobileNumber: user.mobileNumber,
+      userName: user.kycDetails?.personalInfo?.fullName || 'Customer',
+      schemeName: scheme.name,
+      monthlyInvestment: scheme.monthlyInvestment,
+      durationMonths: scheme.durationMonths,
+      goalGoldGram: userScheme.goalGoldGram
+    }).catch(err => console.error('WhatsApp Error:', err.message));
 
     return res.status(201).json({
       success: true,

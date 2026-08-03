@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Joi = require('joi');
 const crypto = require('crypto');
 const helpers = require('../utils/helpers');
+const { sendPaymentSuccessWhatsApp, sendPaymentReminderWhatsApp } = require('../utils/whatsappService');
 
 // Input Validation Schemas
 const initializeSchema = Joi.object({
@@ -285,6 +286,23 @@ const verifyPayment = async (req, res, next) => {
       `You have purchased ${goldGained} g gold successfully. Current Balance: ${userScheme.goldAccumulated} g.`,
       'GOLD_PURCHASE'
     );
+
+    // Fetch user profile for details
+    const user = await User.findById(req.user.id);
+
+    // Send WhatsApp Payment Success Receipt
+    if (user) {
+      sendPaymentSuccessWhatsApp({
+        mobileNumber: user.mobileNumber,
+        userName: user.kycDetails?.personalInfo?.fullName || 'Customer',
+        schemeName: userScheme.schemeId ? userScheme.schemeId.name : 'Swarna Bindu Scheme',
+        amountPaid: payment.amount,
+        goldGainedGrams: goldGained,
+        totalGoldGrams: userScheme.goldAccumulated,
+        invoiceNo: payment.invoiceNo,
+        transactionId: payment.transactionId
+      }).catch(err => console.error('WhatsApp Error:', err.message));
+    }
 
     return res.status(200).json({
       success: true,
