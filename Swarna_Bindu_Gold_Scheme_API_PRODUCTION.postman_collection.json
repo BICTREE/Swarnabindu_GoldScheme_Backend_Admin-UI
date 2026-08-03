@@ -1,15 +1,14 @@
 {
   "info": {
-    "name": "Dev_Swarna Bindu Gold Scheme REST API",
-    "description": "A unified API collection for the Swarna Bindu Gold Scheme platform. Organized into separate \"Client\" and \"Admin\" flows for development convenience.\n\n---\n\n## 🧪 MOCK MODE — Flutter Developer Integration Guide\n\nThis backend runs in **MOCK_MODE=true**. No real external services (FAST2SMS, Razorpay, GoldRateAPI, KYC API) are needed.\n\n### Quick Start Flow:\n1. **Send OTP** — use any valid mobile number (e.g. +919876543210)\n2. **Verify OTP** — always use OTP = `123456` (fixed mock code)\n3. **Complete KYC** steps 1–5, then wait **10 seconds** → KYC auto-approves\n4. **Join a scheme** → use a schemeId from List Schemes\n5. **Initialize payment** → copy `transactionId` from response\n6. **Verify payment** — send `status: SUCCESSFUL` directly, **no Razorpay SDK needed**\n\n### Variables auto-set by test scripts:\n- `clientToken` — set after Verify OTP\n- `clientRefreshToken` — set after Verify OTP\n- `transactionId` — set after Initialize Payment",
+    "name": "Pro_Swarna Bindu Gold Scheme REST API",
+    "description": "Production API collection for the Swarna Bindu Gold Scheme platform.\nBase URL: https://scheme.bindujewellery.com/api/v1\n\n---\n\n## Production Services Active\n- **OTP**: Delivered via FAST2SMS to the real mobile number\n- **Payments**: Live Razorpay gateway — Flutter SDK returns real signature\n- **Gold Rate**: Live rate from GoldAPI.io / MetalpriceAPI\n- **KYC**: Manual admin review required (no auto-approval)\n\n## Variables auto-set by test scripts\n- clientToken — set after Verify OTP\n- clientRefreshToken — set after Verify OTP\n- transactionId — set after Initialize Payment",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:5001/api/v1",
-      "type": "string",
-      "description": "Development Base URL. Switch to prodBaseUrl (https://scheme.bindujewellery.com/api/v1) for testing against production server."
+      "value": "https://scheme.bindujewellery.com/api/v1",
+      "type": "string"
     },
     {
       "key": "clientToken",
@@ -29,11 +28,6 @@
     {
       "key": "transactionId",
       "value": "",
-      "type": "string"
-    },
-    {
-      "key": "prodBaseUrl",
-      "value": "https://scheme.bindujewellery.com/api/v1",
       "type": "string"
     }
   ],
@@ -56,7 +50,7 @@
                 "health"
               ]
             },
-            "description": "Server health check route for API v1. Resolves to http://localhost:5001/api/v1/health or https://scheme.bindujewellery.com/api/v1/health."
+            "description": "Production Server health check. Resolves directly to https://scheme.bindujewellery.com/api/v1/health."
           },
           "response": [
             {
@@ -77,16 +71,16 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"success\": true,\n  \"message\": \"Swarna Bindu Gold Scheme API v1 server is online and operational\",\n  \"data\": {\n    \"version\": \"1.0.0\",\n    \"apiVersion\": \"v1\",\n    \"environment\": \"development\",\n    \"mockMode\": true,\n    \"timestamp\": \"2026-08-03T12:00:00.000Z\"\n  }\n}"
+              "body": "{\n  \"success\": true,\n  \"message\": \"Swarna Bindu Gold Scheme API v1 server is online and operational\",\n  \"data\": {\n    \"version\": \"1.0.0\",\n    \"apiVersion\": \"v1\",\n    \"environment\": \"production\",\n    \"mockMode\": false,\n    \"timestamp\": \"2026-08-03T12:00:00.000Z\"\n  }\n}"
             }
           ]
         },
         {
           "name": "Auth",
-          "description": "Authentication endpoints for mobile client users (OTP Send/Verify and refresh flows). Uses {{clientToken}}.\n\n🧪 MOCK_MODE: Use any valid mobile number. OTP is always `123456`. No real SMS is sent.",
+          "description": "Authentication endpoints for mobile client users (OTP Send/Verify and refresh flows). Uses {{clientToken}}.\n\nProduction: OTP is delivered via FAST2SMS to the real mobile number. Enter the OTP received on the device.",
           "item": [
             {
-              "name": "1. Send OTP [MOCK: OTP printed on server console — always use 123456]",
+              "name": "1. Send OTP",
               "request": {
                 "method": "POST",
                 "header": [],
@@ -154,7 +148,7 @@
               ]
             },
             {
-              "name": "2. Verify OTP [MOCK: use otp=123456 for any number]",
+              "name": "2. Verify OTP",
               "request": {
                 "method": "POST",
                 "header": [],
@@ -170,7 +164,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"mobileNumber\": \"+919876543210\",\n  \"otp\": \"123456\",\n  \"deviceToken\": \"fcm_client_device_token\"\n}",
+                  "raw": "{\n  \"mobileNumber\": \"+919876543210\",\n  \"otp\": \"ENTER_REAL_OTP_HERE\",\n  \"deviceToken\": \"fcm_client_device_token\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -336,7 +330,7 @@
         },
         {
           "name": "Profile & KYC",
-          "description": "Client profile details, dynamic dashboard savings valuation metrics, and step-by-step KYC submission endpoints. Requires {{clientToken}}.",
+          "description": "Client profile details, dynamic dashboard savings valuation metrics, and step-by-step KYC submission endpoints. Requires {{clientToken}}.\n\nProduction: KYC documents are reviewed manually by admin. No auto-approval. User will be notified via push notification when approved/rejected.",
           "item": [
             {
               "name": "1. Get Profile & Aggregated Savings",
@@ -651,7 +645,7 @@
               ]
             },
             {
-              "name": "6. KYC Step 5: Upload Selfie & Finalize [MOCK: KYC auto-approves in ~10 seconds]",
+              "name": "6. KYC Step 5: Upload Selfie & Finalize",
               "request": {
                 "method": "POST",
                 "header": [],
@@ -980,7 +974,7 @@
         },
         {
           "name": "Payments Flow",
-          "description": "Endpoints for payment dues calculation, initializing Razorpay orders, verifying gateway signatures, and downloading tax invoice receipts. Requires {{clientToken}}.",
+          "description": "Payment flow using live Razorpay gateway.\n\nProduction Payment Flow:\n1. Call Initialize Payment -> receive real razorpayOrderId\n2. Pass razorpayOrderId to Razorpay Flutter SDK\n3. Flutter SDK returns razorpay_payment_id, razorpay_order_id, razorpay_signature\n4. Call Verify Payment with transactionId, status=SUCCESSFUL, paymentMethod\n\nGold is credited automatically after successful verification.",
           "item": [
             {
               "name": "1. Get Outstanding Dues Schedule",
@@ -1032,7 +1026,7 @@
               ]
             },
             {
-              "name": "2. Initialize Installment Payment Session [MOCK: returns fake razorpayOrderId]",
+              "name": "2. Initialize Installment Payment Session",
               "request": {
                 "method": "POST",
                 "header": [],
@@ -1083,7 +1077,7 @@
               ],
               "response": [
                 {
-                  "name": "Success - Session Created (Mock razorpayOrderId - ignore in Flutter)",
+                  "name": "Success - Razorpay Order Created",
                   "originalRequest": {
                     "method": "GET",
                     "header": [],
@@ -1100,12 +1094,12 @@
                       "value": "application/json"
                     }
                   ],
-                  "body": "{\n  \"success\": true,\n  \"message\": \"Payment initialized successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"transactionId\": \"609e...\",\n    \"razorpayOrderId\": \"order_a1b2c3d4 (mock - skip Razorpay SDK)\",\n    \"amount\": 5000,\n    \"gst\": 0,\n    \"convenienceFee\": 0,\n    \"totalPayable\": 5000,\n    \"schemeName\": \"Swarna Bindu Popular\"\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Payment initialized successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"transactionId\": \"609e...\",\n    \"razorpayOrderId\": \"order_REAL_RAZORPAY_ID\",\n    \"amount\": 5000,\n    \"gst\": 0,\n    \"convenienceFee\": 0,\n    \"totalPayable\": 5000,\n    \"schemeName\": \"Swarna Bindu Popular\"\n  }\n}"
                 }
               ]
             },
             {
-              "name": "3. Verify Payment & Credit Gold [MOCK: skip Razorpay SDK — send status=SUCCESSFUL directly]",
+              "name": "3. Verify Payment & Credit Gold",
               "request": {
                 "method": "POST",
                 "header": [],
