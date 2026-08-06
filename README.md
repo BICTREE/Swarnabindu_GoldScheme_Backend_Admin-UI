@@ -69,6 +69,12 @@ A complete REST API backend for the **Swarna Bindu** Gold Scheme mobile applicat
 │       ├── adminGoldRoutes.js   # /api/v1/admin/gold-rate/...
 │       ├── adminNotificationRoutes.js # /api/v1/admin/notifications/...
 │       └── adminDashboardRoutes.js # /api/v1/admin/dashboard/... & /api/v1/admin/audit-logs
+├── docs/                     # Project documentation & integration guides
+│   ├── flutter/
+│   │   ├── INTEGRATION_GUIDE.md    # Complete Flutter integration & payload reference
+│   │   └── SESSION_HANDLING_GUIDE.md # Token management & Dio Interceptor setup
+│   └── production/
+│       └── API_CHECKLIST.md        # Pre-launch security & infrastructure checklist
 ├── utils/
 │   ├── helpers.js            # OTP generation, token utility, and audit logging
 │   └── seed.js               # Database seeder (Schemes, Gold rates, Super Admin)
@@ -80,6 +86,15 @@ A complete REST API backend for the **Swarna Bindu** Gold Scheme mobile applicat
 ├── test-admin-api.js         # Admin E2E programmatic integration test runner
 └── README.md                 # Project documentation
 ```
+
+---
+
+## 📚 Documentation & Integration Guides
+
+* **[Flutter Integration Guide](docs/flutter/INTEGRATION_GUIDE.md)**: Endpoints, payload contracts, test mobile accounts, and multi-step KYC submission wizard guide.
+* **[Flutter Session Handling Guide](docs/flutter/SESSION_HANDLING_GUIDE.md)**: Double-token lifecycle, `401` error code taxonomy, and copy-paste ready Dio Interceptor implementation.
+* **[Production API Checklist](docs/production/API_CHECKLIST.md)**: Production readiness checklist covering security, webhooks, rate limiting, and environment variable audits.
+
 
 ---
 
