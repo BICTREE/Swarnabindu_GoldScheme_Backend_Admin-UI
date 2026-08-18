@@ -24,10 +24,13 @@ const saveOTP = (mobileNumber, otp) => {
 
 /**
  * Verify OTP
+ * When MOCK_MODE=true in .env, any mobile number can use the fixed MOCK_OTP (e.g. 123456)
+ * so Flutter developers can test without real SMS delivery.
  */
 const verifyOTP = (mobileNumber, otp) => {
-  // Static check for programmatic testing
-  if (mobileNumber === '+919876543210' && otp === '123456') {
+  // 🧪 MOCK_MODE: Accept a fixed OTP for any mobile number (for Flutter developer integration)
+  if (process.env.MOCK_MODE === 'true' && otp === process.env.MOCK_OTP) {
+    console.log(`\n🧪 [MOCK_MODE] OTP bypass accepted for: ${mobileNumber}\n`);
     return true;
   }
 

@@ -1,0 +1,3087 @@
+{
+  "info": {
+    "name": "Pro_Swarna Bindu Gold Scheme REST API",
+    "description": "Production API collection for the Swarna Bindu Gold Scheme platform.\nBase URL: https://scheme.bindujewellery.com/api/v1\n\n---\n\n## Production Services Active\n- **OTP**: Delivered via FAST2SMS to the real mobile number\n- **Payments**: Live Razorpay gateway — Flutter SDK returns real signature\n- **Gold Rate**: Live rate from GoldAPI.io / MetalpriceAPI\n- **KYC**: Manual admin review required (no auto-approval)\n\n## Variables auto-set by test scripts\n- clientToken — set after Verify OTP\n- clientRefreshToken — set after Verify OTP\n- transactionId — set after Initialize Payment",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://scheme.bindujewellery.com/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "clientToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transactionId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Client API Flow",
+      "description": "All user-facing mobile client endpoints under `/api/v1/...`. Separated for frontend developers integration.",
+      "item": [
+        {
+          "name": "0. Server Health Check — /api/v1/health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Production Server health check. Resolves directly to https://scheme.bindujewellery.com/api/v1/health."
+          },
+          "response": [
+            {
+              "name": "200 OK - Server Operational",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Swarna Bindu Gold Scheme API v1 server is online and operational\",\n  \"data\": {\n    \"version\": \"1.0.0\",\n    \"apiVersion\": \"v1\",\n    \"environment\": \"production\",\n    \"mockMode\": false,\n    \"timestamp\": \"2026-08-03T12:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Auth",
+          "description": "Authentication endpoints for mobile client users (OTP Send/Verify and refresh flows). Uses {{clientToken}}.\n\nProduction: OTP is delivered via FAST2SMS to the real mobile number. Enter the OTP received on the device.",
+          "item": [
+            {
+              "name": "1. Send OTP",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/send-otp",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "send-otp"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mobileNumber\": \"+919876543210\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - OTP Sent",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"OTP sent successfully to your mobile number\",\n  \"errorCode\": null,\n  \"data\": {\n    \"otpSent\": true,\n    \"expiresInSeconds\": 300\n  }\n}"
+                },
+                {
+                  "name": "Validation Error - Invalid Phone",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"message\": \"Validation Error: \\\"mobileNumber\\\" fails to match required pattern\",\n  \"errorCode\": \"VALIDATION_ERROR\",\n  \"data\": null\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. Verify OTP",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/verify-otp",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "verify-otp"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mobileNumber\": \"+919876543210\",\n  \"otp\": \"ENTER_REAL_OTP_HERE\",\n  \"deviceToken\": \"fcm_client_device_token\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Verified Login",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Authentication successful\",\n  \"errorCode\": null,\n  \"data\": {\n    \"user\": {\n      \"id\": \"60a92b23...\",\n      \"mobileNumber\": \"+919876543210\",\n      \"kycStatus\": \"PENDING\"\n    },\n    \"accessToken\": \"JWT_ACCESS...\",\n    \"refreshToken\": \"JWT_REFRESH...\"\n  }\n}"
+                },
+                {
+                  "name": "Error - Invalid OTP",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"message\": \"Invalid or expired OTP\",\n  \"errorCode\": \"INVALID_OTP\",\n  \"data\": null\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "if (response.success && response.data && response.data.accessToken) {",
+                      "    pm.collectionVariables.set(\"clientToken\", response.data.accessToken);",
+                      "    pm.collectionVariables.set(\"clientRefreshToken\", response.data.refreshToken);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3. Refresh Token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{clientRefreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Token Refreshed",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Access token refreshed successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"accessToken\": \"NEW_JWT_ACCESS...\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "4. Logout",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{clientRefreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Session Terminated",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Logged out successfully\",\n  \"errorCode\": null,\n  \"data\": null\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Profile & KYC",
+          "description": "Client profile details, dynamic dashboard savings valuation metrics, and step-by-step KYC submission endpoints. Requires {{clientToken}}.\n\nProduction: KYC documents are reviewed manually by admin. No auto-approval. User will be notified via push notification when approved/rejected.",
+          "item": [
+            {
+              "name": "1. Get Profile & Aggregated Savings",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/profile",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "profile"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Returns Metrics",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Profile data retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"profile\": {\n      \"id\": \"609b...\",\n      \"mobileNumber\": \"+919876543210\",\n      \"kycStatus\": \"APPROVED\",\n      \"personalInfo\": {\n        \"fullName\": \"John Mathew\",\n        \"email\": \"john@gmail.com\"\n      }\n    },\n    \"investments\": {\n      \"totalSavingsValue\": 5000,\n      \"currentGoldValue\": 5012.5,\n      \"totalGoldAccumulated\": 0.716,\n      \"goalGoldGram\": 8.5,\n      \"progressPercent\": 8,\n      \"nextInstallmentDue\": 5000,\n      \"nextDueDate\": \"2026-08-05\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. KYC Step 1: Personal Details",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/kyc/personal",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "kyc",
+                    "personal"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "fullName",
+                      "value": "John Mathew",
+                      "type": "text"
+                    },
+                    {
+                      "key": "dob",
+                      "value": "1995-05-15",
+                      "type": "text"
+                    },
+                    {
+                      "key": "gender",
+                      "value": "Male",
+                      "type": "text"
+                    },
+                    {
+                      "key": "email",
+                      "value": "john@gmail.com",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Step 1 Completed",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC Step 1: Personal details updated successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"PENDING\",\n    \"personalInfo\": {\n      \"fullName\": \"John Mathew\",\n      \"dob\": \"1995-05-15T00:00:00.000Z\",\n      \"gender\": \"Male\",\n      \"email\": \"john@gmail.com\",\n      \"profilePicture\": \"/uploads/profiles/profile.png\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "3. KYC Step 2: Identity Documents",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/kyc/identity",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "kyc",
+                    "identity"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "aadhaarNumber",
+                      "value": "123456784589",
+                      "type": "text"
+                    },
+                    {
+                      "key": "panNumber",
+                      "value": "ABCDE1234F",
+                      "type": "text"
+                    },
+                    {
+                      "key": "digiLockerConnected",
+                      "value": "false",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Documents Uploaded",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC Step 2: Identity documents updated successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"PENDING\",\n    \"identityVerification\": {\n      \"aadhaarNumber\": \"123456784589\",\n      \"panNumber\": \"ABCDE1234F\",\n      \"digiLockerConnected\": false,\n      \"aadhaarFront\": \"/uploads/kyc/front.png\",\n      \"panCardPhoto\": \"/uploads/kyc/pan.png\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "4. KYC Step 3: Address Info",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/kyc/address",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "kyc",
+                    "address"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"houseName\": \"Green Villa\",\n  \"street\": \"MG Road\",\n  \"city\": \"Kochi\",\n  \"district\": \"Ernakulam\",\n  \"state\": \"Kerala\",\n  \"pinCode\": \"682001\",\n  \"latitude\": 9.9816,\n  \"longitude\": 76.2999\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Address Saved",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC Step 3: Address information updated successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"PENDING\",\n    \"addressInfo\": {\n      \"houseName\": \"Green Villa\",\n      \"street\": \"MG Road\",\n      \"city\": \"Kochi\",\n      \"district\": \"Ernakulam\",\n      \"state\": \"Kerala\",\n      \"pinCode\": \"682001\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "5. KYC Step 4: Bank account details",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/kyc/bank",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "kyc",
+                    "bank"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accountHolderName\": \"John Mathew\",\n  \"bankName\": \"Axis Bank Ltd.\",\n  \"accountNumber\": \"919876543210\",\n  \"confirmAccountNumber\": \"919876543210\",\n  \"ifscCode\": \"UTIB0001234\",\n  \"branchName\": \"MG Road, Kochi\",\n  \"upiId\": \"john@okaxis\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Bank Setup Saved",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC Step 4: Bank account details updated successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"PENDING\",\n    \"bankDetails\": {\n      \"bankName\": \"Axis Bank Ltd.\",\n      \"accountNumber\": \"919876543210\",\n      \"ifscCode\": \"UTIB0001234\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "6. KYC Step 5: Upload Selfie & Finalize",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/kyc/submit",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "kyc",
+                    "submit"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - KYC Submitted",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC documents submitted successfully. Status set to SUBMITTED.\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"SUBMITTED\",\n    \"selfieDetails\": {\n      \"selfiePath\": \"/uploads/selfies/selfie.png\",\n      \"capturedAt\": \"2026-07-08T12:00:00.000Z\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "7. View KYC Verification Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/kyc/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "kyc",
+                    "status"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Status Output",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC status retrieved\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"APPROVED\",\n    \"rejectedReason\": null\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Schemes Catalog",
+          "description": "Catalog endpoints for exploring gold schemes and joining/subscribing. Requires APPROVED KYC and {{clientToken}}.",
+          "item": [
+            {
+              "name": "1. List Schemes Catalog",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/schemes?page=1&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "schemes?page=1&limit=10"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Schemes List",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Schemes catalog retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"schemes\": [\n      {\n        \"_id\": \"608c...\",\n        \"name\": \"Swarna Bindu Popular\",\n        \"monthlyInvestment\": 5000,\n        \"durationMonths\": 11,\n        \"maturityBenefitPercent\": 8,\n        \"minGoldGram\": 10\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 10,\n      \"total\": 3,\n      \"pages\": 1\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. Get Scheme Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/schemes/608c...",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "schemes",
+                    "608c..."
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Scheme Details",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Scheme details retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"scheme\": {\n      \"_id\": \"608c...\",\n      \"name\": \"Swarna Bindu Popular\",\n      \"description\": \"Wealth savings...\",\n      \"termsAndConditions\": \"Terms...\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "3. Subscribe / Join Scheme",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/schemes/608c.../join",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "schemes",
+                    "608c...",
+                    "join"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Enrolled in Plan",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Subscribed to scheme successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"userScheme\": {\n      \"id\": \"609d...\",\n      \"schemeName\": \"Swarna Bindu Popular\",\n      \"monthlyInvestment\": 5000,\n      \"startDate\": \"2026-07-08\",\n      \"endDate\": \"2027-06-08\",\n      \"goalGoldGram\": 7.85,\n      \"status\": \"ACTIVE\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "Forbidden - KYC Required",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "Forbidden",
+                  "code": 403,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"message\": \"KYC approval is required to subscribe to gold schemes. Please complete your profile KYC.\",\n  \"errorCode\": \"KYC_REQUIRED\",\n  \"data\": {\n    \"kycStatus\": \"PENDING\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "4. List My Subscribed Schemes",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/schemes/my-schemes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "schemes",
+                    "my-schemes"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Joined List",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"My schemes retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"schemes\": [\n      {\n        \"id\": \"609d...\",\n        \"schemeName\": \"Swarna Bindu Popular\",\n        \"goldAccumulated\": 0.716,\n        \"totalPaid\": 5000,\n        \"status\": \"ACTIVE\",\n        \"progressPercent\": 8\n      }\n    ]\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Payments Flow",
+          "description": "Payment flow using live Razorpay gateway.\n\nProduction Payment Flow:\n1. Call Initialize Payment -> receive real razorpayOrderId\n2. Pass razorpayOrderId to Razorpay Flutter SDK\n3. Flutter SDK returns razorpay_payment_id, razorpay_order_id, razorpay_signature\n4. Call Verify Payment with transactionId, status=SUCCESSFUL, paymentMethod\n\nGold is credited automatically after successful verification.",
+          "item": [
+            {
+              "name": "1. Get Outstanding Dues Schedule",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/dues",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "dues"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Outstanding Dues",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Payment dues retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"totalPendingAmount\": 0,\n    \"nextDueAmount\": 5000,\n    \"nextDueDate\": \"2026-08-05\",\n    \"schemes\": [\n      {\n        \"userSchemeId\": \"609d...\",\n        \"schemeName\": \"Swarna Bindu Popular\",\n        \"monthlyInvestment\": 5000,\n        \"paidInstallments\": 1,\n        \"totalInstallments\": 11,\n        \"pendingAmount\": 0,\n        \"nextDueAmount\": 5000,\n        \"nextDueDate\": \"2026-08-05\",\n        \"status\": \"ACTIVE\"\n      }\n    ]\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. Initialize Installment Payment Session",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/initialize",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "initialize"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userSchemeId\": \"609d...\",\n  \"installmentType\": \"CURRENT_MONTH\",\n  \"amount\": 5000\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "if (response.success && response.data && response.data.transactionId) {",
+                      "    pm.collectionVariables.set('transactionId', response.data.transactionId);",
+                      "    console.log('[MOCK] transactionId auto-saved:', response.data.transactionId);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "response": [
+                {
+                  "name": "Success - Razorpay Order Created",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Payment initialized successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"transactionId\": \"609e...\",\n    \"razorpayOrderId\": \"order_REAL_RAZORPAY_ID\",\n    \"amount\": 5000,\n    \"gst\": 0,\n    \"convenienceFee\": 0,\n    \"totalPayable\": 5000,\n    \"schemeName\": \"Swarna Bindu Popular\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "3. Verify Payment & Credit Gold",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "verify"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"transactionId\": \"{{transactionId}}\",\n  \"status\": \"SUCCESSFUL\",\n  \"paymentMethod\": \"UPI - Google Pay\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Gold Weight Credited",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Payment processed and gold credited successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"payment\": {\n      \"transactionId\": \"TXN918...\",\n      \"invoiceNo\": \"INV-2026-1025\",\n      \"razorpayOrderId\": \"order_abc123xyz\",\n      \"amountPaid\": 5000,\n      \"goldGained\": 0.714,\n      \"paidAt\": \"2026-07-08T12:00:00.000Z\",\n      \"paymentMethod\": \"UPI - Google Pay\",\n      \"status\": \"SUCCESSFUL\"\n    },\n    \"userScheme\": {\n      \"id\": \"609d...\",\n      \"goldAccumulated\": 1.43,\n      \"totalPaid\": 10000\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "4. Get Payments Transaction History",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/history?page=1&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "history?page=1&limit=10"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Transaction Logs",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Payment history retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"history\": [\n      {\n        \"transactionId\": \"TXN918...\",\n        \"schemeName\": \"Swarna Bindu Popular\",\n        \"amountPaid\": 5000,\n        \"paymentMethod\": \"UPI - Google Pay\",\n        \"paidAt\": \"2026-07-08T12:00:00.000Z\",\n        \"status\": \"SUCCESSFUL\",\n        \"installmentType\": \"CURRENT_MONTH\"\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 10,\n      \"total\": 2,\n      \"pages\": 1\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "5. Download Tax Invoice Receipt Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/receipt/TXN918...",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "receipt",
+                    "TXN918..."
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return PDF Receipt Metadata",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Receipt retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"receipt\": {\n      \"schemeName\": \"Swarna Bindu Popular\",\n      \"schemeStatus\": \"ACTIVE\",\n      \"installmentType\": \"CURRENT_MONTH\",\n      \"paidAt\": \"2026-07-08T12:00:00.000Z\",\n      \"amountPaid\": 5000,\n      \"gst\": 0,\n      \"convenienceFee\": 0,\n      \"totalPaid\": 5000,\n      \"transactionId\": \"TXN918...\",\n      \"invoiceNo\": \"INV-2026-1025\",\n      \"razorpayOrderId\": \"order_abc123xyz\",\n      \"paymentMethod\": \"UPI - Google Pay\"\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gold & Redemptions",
+          "description": "Endpoints for viewing live rate fluctuations and executing gold balance cash redemptions. Requires {{clientToken}}.",
+          "item": [
+            {
+              "name": "1. Get Today's Live Gold Rate",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/gold-rate/today",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "gold-rate",
+                    "today"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Fluctuated Rates",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Today's gold rate retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"rate22K_per_g\": 7012.5,\n    \"rate24K_per_8g\": 56100,\n    \"lastUpdated\": \"2026-07-08T12:00:00.000Z\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. Redeem Gold Balance for Cash Payout",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/gold/redeem",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "gold",
+                    "redeem"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"userSchemeId\": \"609d...\",\n  \"goldQuantity\": 1.43\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Gold Balance Liquidated",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Gold redeemed successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"redemption\": {\n      \"userSchemeId\": \"609d...\",\n      \"schemeName\": \"Swarna Bindu Popular\",\n      \"redeemedGrams\": 1.43,\n      \"goldRateApplied\": 7012.5,\n      \"payoutAmount\": 10027.87,\n      \"payoutBankAccount\": {\n        \"bankName\": \"Axis Bank Ltd.\",\n        \"accountNumber\": \"XXXX3210\"\n      },\n      \"status\": \"REDEEMED\",\n      \"remainingGoldGrams\": 0\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Notifications",
+          "description": "Endpoints for retrieving push notifications alerts history and marking them as read. Requires {{clientToken}}.",
+          "item": [
+            {
+              "name": "1. Get Alerts History",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/notifications?page=1&limit=15",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notifications?page=1&limit=15"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Logs",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Notifications retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"notifications\": [\n      {\n        \"_id\": \"60af...\",\n        \"title\": \"Gold Purchase Successful\",\n        \"message\": \"You purchased 0.714 g gold successfully.\",\n        \"type\": \"GOLD_PURCHASE\",\n        \"isRead\": false\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 15,\n      \"total\": 1,\n      \"pages\": 1\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. Mark Notification as Read",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/notifications/60af.../read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notifications",
+                    "60af...",
+                    "read"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Read Flag Set",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Notification marked as read\",\n  \"errorCode\": null,\n  \"data\": {\n    \"notification\": {\n      \"_id\": \"60af...\",\n      \"isRead\": true\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "3. Register FCM Push Device Token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/notifications/register-device",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notifications",
+                    "register-device"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"deviceToken\": \"fcm_mock_token_key_12345\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Device Token Registered",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Device token registered successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"deviceToken\": \"fcm_mock_token_key_12345\"\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Compliance & DPDP Rights",
+          "description": "DPDP Act, 2023 rights management (consents logging, data portability download, erasure, and grievances).",
+          "item": [
+            {
+              "name": "1. Public Data Fiduciary Contact",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/compliance/contact",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "compliance",
+                    "contact"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "2. Get Consents History",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{clientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/compliance/consent",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "compliance",
+                    "consent"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "3. Log Consent Agreement",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{clientToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"consentType\": \"KYC\",\n  \"purpose\": \"Identity verification for gold savings scheme\",\n  \"consentText\": \"I hereby authorize Swarna Bindu to verify my offline e-KYC uploads.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/compliance/consent",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "compliance",
+                    "consent"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "4. Withdraw Consent",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{clientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/compliance/consent/KYC",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "compliance",
+                    "consent",
+                    "KYC"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "5. Export Personal Data (Portability)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{clientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/compliance/data-portability",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "compliance",
+                    "data-portability"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "6. Request Data Erasure",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{clientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/compliance/data-erasure",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "compliance",
+                    "data-erasure"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "7. Submit Grievance Ticket",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{clientToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"subject\": \"Aadhaar upload issue\",\n  \"description\": \"The selfie upload times out on my mobile screen.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/compliance/grievance",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "compliance",
+                    "grievance"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "8. Get My Grievance Tickets",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{clientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/compliance/grievance",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "compliance",
+                    "grievance"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin API Flow",
+      "description": "All management endpoints under `/api/v1/admin/...`. Separated for admin dashboard developers integration.",
+      "item": [
+        {
+          "name": "Auth",
+          "description": "Authentication endpoints for administrators. Uses {{adminToken}}.",
+          "item": [
+            {
+              "name": "1. Admin Login",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@swarnabindu.com\",\n  \"password\": \"admin123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Admin Logged In",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Admin login successful\",\n  \"errorCode\": null,\n  \"data\": {\n    \"admin\": {\n      \"id\": \"60bf...\",\n      \"name\": \"Super Admin\",\n      \"email\": \"admin@swarnabindu.com\",\n      \"role\": \"SUPER_ADMIN\"\n    },\n    \"accessToken\": \"JWT_ADMIN_ACCESS...\"\n  }\n}"
+                },
+                {
+                  "name": "Error - Invalid Password",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"message\": \"Invalid credentials\",\n  \"errorCode\": \"INVALID_CREDENTIALS\",\n  \"data\": null\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "if (response.success && response.data && response.data.accessToken) {",
+                      "    pm.collectionVariables.set(\"adminToken\", response.data.accessToken);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2. Register Moderator Admin (Super Admin only)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/auth/create-admin",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "auth",
+                    "create-admin"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"moderator@swarnabindu.com\",\n  \"password\": \"moderator123\",\n  \"name\": \"Jane Moderator\",\n  \"role\": \"MODERATOR\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Moderator Created",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Admin account created successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"admin\": {\n      \"id\": \"60c1...\",\n      \"name\": \"Jane Moderator\",\n      \"email\": \"moderator@swarnabindu.com\",\n      \"role\": \"MODERATOR\"\n    }\n  }\n}"
+                },
+                {
+                  "name": "Forbidden - Moderator Access Prohibited",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "Forbidden",
+                  "code": 403,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"message\": \"Forbidden: Access restricted to [SUPER_ADMIN] roles. Your role: MODERATOR\",\n  \"errorCode\": \"FORBIDDEN\",\n  \"data\": null\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Users & KYC Management",
+          "description": "Endpoints for viewing client profiles, banning accounts, listing submissions, and approving/rejecting KYC steps. Requires {{adminToken}} with SUPER_ADMIN / MODERATOR roles.",
+          "item": [
+            {
+              "name": "1. List Registered Client Users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users?page=1&limit=10&kycStatus=APPROVED",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users?page=1&limit=10&kycStatus=APPROVED"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Returns List",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Users list retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"users\": [\n      {\n        \"_id\": \"609b...\",\n        \"mobileNumber\": \"+919876543210\",\n        \"kycStatus\": \"APPROVED\",\n        \"isBanned\": false\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 10,\n      \"total\": 1,\n      \"pages\": 1\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. Get User Detailed Profile",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/609b...",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users",
+                    "609b..."
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Returns Profile details",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"User details retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"user\": {\n      \"_id\": \"609b...\",\n      \"mobileNumber\": \"+919876543210\",\n      \"kycStatus\": \"APPROVED\",\n      \"kycDetails\": {\n        \"personalInfo\": {\n          \"fullName\": \"John Mathew\"\n        }\n      }\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "3. Ban / Unban Client User",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/609b.../ban",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users",
+                    "609b...",
+                    "ban"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"isBanned\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - User Banned",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"User account has been successfully banned\",\n  \"errorCode\": null,\n  \"data\": {\n    \"userId\": \"609b...\",\n    \"isBanned\": true\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "4. List Submitted Pending KYC Verification requests",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/kyc/pending?page=1&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "kyc",
+                    "pending?page=1&limit=10"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Submitted list",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Pending KYC review requests retrieved\",\n  \"errorCode\": null,\n  \"data\": {\n    \"pendingList\": [\n      {\n        \"_id\": \"609b...\",\n        \"mobileNumber\": \"+919876543210\",\n        \"kycStatus\": \"SUBMITTED\",\n        \"kycDetails\": {\n          \"personalInfo\": {\n            \"fullName\": \"John Mathew\"\n          }\n        }\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 10,\n      \"total\": 1,\n      \"pages\": 1\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "5. Approve KYC Verification",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/kyc/609b.../approve",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "kyc",
+                    "609b...",
+                    "approve"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - KYC Approved",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC request approved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"userId\": \"609b...\",\n    \"kycStatus\": \"APPROVED\"\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "6. Reject KYC Verification",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/kyc/609b.../reject",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "kyc",
+                    "609b...",
+                    "reject"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"PAN card photo uploaded is blurry. Please re-upload.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - KYC Rejected",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC request rejected successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"userId\": \"609b...\",\n    \"kycStatus\": \"REJECTED\",\n    \"rejectedReason\": \"PAN card photo uploaded is blurry. Please re-upload.\"\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Schemes Catalog CRUD",
+          "description": "Catalog templates management and user subscription inspection. Requires {{adminToken}} with SUPER_ADMIN / MODERATOR roles.",
+          "item": [
+            {
+              "name": "1. List Schemes Catalog templates",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/schemes?page=1&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "schemes?page=1&limit=10"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return All Templates",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Schemes catalog retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"schemes\": [\n      {\n        \"_id\": \"608c...\",\n        \"name\": \"Swarna Bindu Popular\",\n        \"monthlyInvestment\": 5000,\n        \"isActive\": true\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 10,\n      \"total\": 3,\n      \"pages\": 1\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. Create a Scheme Template",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/schemes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "schemes"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Swarna Bindu Platinum\",\n  \"description\": \"Elite plan for premium savings.\",\n  \"monthlyInvestment\": 15000,\n  \"durationMonths\": 11,\n  \"maturityBenefitPercent\": 12,\n  \"minGoldGram\": 30,\n  \"termsAndConditions\": \"1. Duration is 11 months.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Template Created",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"New scheme added to catalog successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"scheme\": {\n      \"_id\": \"60c2...\",\n      \"name\": \"Swarna Bindu Platinum\",\n      \"monthlyInvestment\": 15000,\n      \"isActive\": true\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "3. Update Scheme specifications",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/schemes/60c2...",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "schemes",
+                    "60c2..."
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Elite plan updated description details.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Template Updated",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Scheme updated successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"scheme\": {\n      \"_id\": \"60c2...\",\n      \"name\": \"Swarna Bindu Platinum\",\n      \"description\": \"Elite plan updated description details.\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "4. Soft Delete / Toggle Scheme template active status",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/schemes/60c2...",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "schemes",
+                    "60c2..."
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Template Inactivated",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Scheme status toggled to INACTIVE\",\n  \"errorCode\": null,\n  \"data\": {\n    \"schemeId\": \"60c2...\",\n    \"isActive\": false\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "5. View platform user subscriptions list",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/schemes/subscriptions?page=1&limit=10&status=ACTIVE",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "schemes",
+                    "subscriptions?page=1&limit=10&status=ACTIVE"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Subscribed Plans",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Subscribed schemes retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"subscriptions\": [\n      {\n        \"_id\": \"609d...\",\n        \"userId\": {\n          \"mobileNumber\": \"+919876543210\",\n          \"fullName\": \"John Mathew\"\n        },\n        \"schemeId\": {\n          \"name\": \"Swarna Bindu Popular\"\n        },\n        \"monthlyInvestment\": 5000,\n        \"goldAccumulated\": 0.714,\n        \"totalPaid\": 5000,\n        \"status\": \"ACTIVE\"\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 10,\n      \"total\": 1,\n      \"pages\": 1\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Payments & Rates Management",
+          "description": "Financial endpoints for listing payments, overriding gold rates, and manual payment reconciliation. Reconciliations require {{adminToken}} with SUPER_ADMIN role.",
+          "item": [
+            {
+              "name": "1. List Payment Transactions history",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/payments?page=1&limit=10&status=PENDING",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "payments?page=1&limit=10&status=PENDING"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Payment history",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Payments transactions retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"payments\": [\n      {\n        \"_id\": \"609e...\",\n        \"userId\": {\n          \"mobileNumber\": \"+919876543210\"\n        },\n        \"amount\": 5000,\n        \"status\": \"PENDING\",\n        \"installmentType\": \"CURRENT_MONTH\"\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 10,\n      \"total\": 1,\n      \"pages\": 1\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. Override live gold rate manually",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/gold-rate/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "gold-rate",
+                    "update"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rate22K_per_g\": 7200,\n  \"rate24K_per_8g\": 60000\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Override Applied",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Gold rate updated successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"goldRate\": {\n      \"_id\": \"60c3...\",\n      \"rate22K_per_g\": 7200,\n      \"rate24K_per_8g\": 60000,\n      \"lastUpdated\": \"2026-07-08T12:00:00.000Z\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "3. Manually Reconcile payment (SUPER_ADMIN only)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/payments/609e.../reconcile",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "payments",
+                    "609e...",
+                    "reconcile"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Reconciled & Gold Credited",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Payment manually reconciled and gold credited successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"payment\": {\n      \"_id\": \"609e...\",\n      \"status\": \"SUCCESSFUL\",\n      \"transactionId\": \"TXN889...\",\n      \"invoiceNo\": \"INV-2026-5544\",\n      \"paymentMethod\": \"Offline Reconciled\"\n    },\n    \"userScheme\": {\n      \"id\": \"609d...\",\n      \"goldAccumulated\": 1.43,\n      \"totalPaid\": 10000\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Announcements (Push Alerts)",
+          "description": "Endpoints for sending direct alerts or broadcasting notices to all registered users. Requires {{adminToken}} with SUPER_ADMIN / MODERATOR roles.",
+          "item": [
+            {
+              "name": "1. Broadcast Alert announcement to all users",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/notifications/broadcast",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "notifications",
+                    "broadcast"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Emergency Notice\",\n  \"message\": \"The platform will undergo brief upgrades.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Broadcast queued",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Announcement broadcasted successfully to 1 users\",\n  \"errorCode\": null,\n  \"data\": {\n    \"sentCount\": 1\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. Send Targeted User alert",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/notifications/user/609b...",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "notifications",
+                    "user",
+                    "609b..."
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Direct Alert Notice\",\n  \"message\": \"Please update your account bank details.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Alert sent",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Targeted notification sent successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"notification\": {\n      \"title\": \"Direct Alert Notice\",\n      \"type\": \"PAYMENT_REMINDER\"\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Dashboard & Audit Logs",
+          "description": "Administrative stats and diagnostic audit logging. Logs require {{adminToken}} with SUPER_ADMIN role.",
+          "item": [
+            {
+              "name": "1. Get Platform Dashboard Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/dashboard/stats",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "dashboard",
+                    "stats"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Stats Aggregated",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Dashboard analytics compiled successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"users\": {\n      \"total\": 1,\n      \"banned\": 0,\n      \"kyc\": {\n        \"approved\": 1,\n        \"submitted\": 0,\n        \"pending\": 0\n      }\n    },\n    \"schemes\": {\n      \"catalogTemplates\": 2,\n      \"activeSubscriptions\": 1\n    },\n    \"financials\": {\n      \"totalRevenueReceived\": 5000,\n      \"totalGoldReserveLiabilities\": 0.714,\n      \"currentGoldLiabilityValue\": 5012.5\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "2. View Platform Audit Logs (Super Admin only)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/audit-logs?page=1&limit=20",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "audit-logs?page=1&limit=20"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Return Logs",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Audit logs retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"logs\": [\n      {\n        \"_id\": \"60c4...\",\n        \"adminId\": {\n          \"email\": \"admin@swarnabindu.com\",\n          \"name\": \"Super Admin\"\n        },\n        \"action\": \"RECONCILE_PAYMENT\",\n        \"targetEntity\": \"Payment\",\n        \"createdAt\": \"2026-07-08T12:00:00.000Z\"\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"limit\": 20,\n      \"total\": 1,\n      \"pages\": 1\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Regulatory Compliance",
+          "description": "Grievances administration, secure media delivery authorization pipeline, and CERT-In breach logs.",
+          "item": [
+            {
+              "name": "1. Get Grievance Tickets list",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/compliance/grievance",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "compliance",
+                    "grievance"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "2. Assign Grievance Ticket",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"adminId\": \"seeded_admin_id\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/compliance/grievance/:id/assign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "compliance",
+                    "grievance",
+                    ":id",
+                    "assign"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "grievance_ticket_id"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "3. Resolve Grievance Ticket",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resolutionNotes\": \"Re-encoded upload pipeline to prevent file compression timeouts.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/compliance/grievance/:id/resolve",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "compliance",
+                    "grievance",
+                    ":id",
+                    "resolve"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "grievance_ticket_id"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "4. Secure Media Download Gateway",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/compliance/media/:userId/aadhaarFront",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "compliance",
+                    "media",
+                    ":userId",
+                    "aadhaarFront"
+                  ],
+                  "variable": [
+                    {
+                      "key": "userId",
+                      "value": "client_user_id"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "5. Log Security Incident (Breach)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Unauthorized network access scans detected\",\n  \"description\": \"Security logs caught port probes targeting 27017.\",\n  \"severity\": \"MEDIUM\",\n  \"affectedComponents\": [\n    \"Database Node 1\"\n  ],\n  \"estimatedImpactedUsers\": 0,\n  \"remediationSteps\": \"Refitted firewall filters to drop offending source IPs.\",\n  \"reportedToCertIn\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/compliance/incidents/log",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "compliance",
+                    "incidents",
+                    "log"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "6. Get Security Incident Logs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/compliance/incidents",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "compliance",
+                    "incidents"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

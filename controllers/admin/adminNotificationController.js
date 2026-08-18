@@ -1,7 +1,9 @@
 const Notification = require('../../models/Notification');
 const User = require('../../models/User');
+const UserScheme = require('../../models/UserScheme');
 const Joi = require('joi');
 const helpers = require('../../utils/helpers');
+const { sendPaymentReminderWhatsApp } = require('../../utils/whatsappService');
 
 const alertSchema = Joi.object({
   title: Joi.string().min(3).required(),
@@ -91,6 +93,22 @@ const sendTargetedNotification = async (req, res, next) => {
       message,
       'PAYMENT_REMINDER'
     );
+
+    // Send WhatsApp Payment Reminder
+    const activeSub = await UserScheme.findOne({ userId: user._id, status: 'ACTIVE' }).populate('schemeId');
+    const schemeName = activeSub && activeSub.schemeId ? activeSub.schemeId.name : 'Swarna Bindu Gold Scheme';
+    const dueAmount = activeSub ? activeSub.monthlyInvestment : 5000;
+    const nextDueDate = new Date();
+    nextDueDate.setDate(5);
+    const dueDateStr = nextDueDate.toISOString().split('T')[0];
+
+    sendPaymentReminderWhatsApp({
+      mobileNumber: user.mobileNumber,
+      userName: user.kycDetails?.personalInfo?.fullName || 'Valued Customer',
+      schemeName,
+      dueAmount,
+      dueDate: dueDateStr
+    }).catch(err => console.error('WhatsApp Error:', err.message));
 
     return res.status(200).json({
       success: true,

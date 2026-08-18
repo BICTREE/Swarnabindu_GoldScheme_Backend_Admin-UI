@@ -43,9 +43,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(sensitiveFieldsMasker); // Compliance output masking filter
 
 // Serve file uploads statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const serveUploadsDir = process.env.VERCEL === '1'
+  ? '/tmp/uploads'
+  : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(serveUploadsDir));
 
-// Root route
+// Root & Version 1 Health Check routes
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
@@ -53,6 +56,20 @@ app.get('/', (req, res) => {
     data: {
       version: '1.0.0',
       nodeEnv: process.env.NODE_ENV
+    }
+  });
+});
+
+app.get(['/api/v1', '/api/v1/health'], (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Swarna Bindu Gold Scheme API v1 server is online and operational',
+    data: {
+      version: '1.0.0',
+      apiVersion: 'v1',
+      environment: process.env.NODE_ENV || 'development',
+      mockMode: process.env.MOCK_MODE === 'true',
+      timestamp: new Date().toISOString()
     }
   });
 });

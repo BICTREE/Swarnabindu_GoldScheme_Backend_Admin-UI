@@ -1,272 +1,162 @@
-# Swarnabindu Gold Scheme — Flutter Developer Integration Guide
-### KYC, Authentication & Environment Modes (`MOCK_MODE=true` vs `MOCK_MODE=false`)
+# 📱 Swarna Bindu Gold Scheme — Flutter Mobile Integration Guide
+
+Welcome to the **Swarna Bindu Gold Scheme** backend integration guide! This document provides all the essential details, endpoint payloads, authentication rules, test credentials, and Postman collection files needed to build and test the Flutter mobile application.
 
 ---
 
-## 1. Overview & Operational Modes
+## 🚀 Quick Setup & Base URL
 
-The Swarnabindu Gold Scheme Backend operates in two environment modes configured on the server via `.env`:
+* **Server API Base URL:** `https://scheme.bindujewellery.com/api/v1`
+* **Local Backend URL (Optional):** `http://localhost:5001/api/v1`
+* **Postman Collection File:** [`Swarna_Bindu_Gold_Scheme_API.postman_collection.json`](./Swarna_Bindu_Gold_Scheme_API.postman_collection.json) *(Collection Name: `Dev_Swarna Bindu Gold Scheme REST API`)*
 
-| Feature | Mock Mode (`MOCK_MODE=true`) | Real / Production Mode (`MOCK_MODE=false`) |
-| :--- | :--- | :--- |
-| **Authentication OTP** | Sent to server console (or standard mock OTP `123456`). No SMS cost. | Real 6-digit OTP delivered via SMS gateway (Fast2SMS / Twilio). |
-| **KYC Verification** | **Automated 10-Second Auto-Approval**. Auto-approves without manual admin intervention. | **Human Admin Review**. Submission stays in `SUBMITTED` until Admin approves or rejects. |
-| **Admin References** | `moderatedBy` & `moderatedAt` remain `null` during auto-approval. | `moderatedBy` (Admin ID) and `moderatedAt` are recorded on approval/rejection. |
-| **Push Notifications** | Logged to Database (`Notification` collection) & printed to backend log. | Delivered to physical mobile devices via Firebase Cloud Messaging (FCM). |
-| **Payment Gateway** | Mock Razorpay signatures and instant test capture. | Real Razorpay Checkout SDK integration & live webhook signatures. |
+> 💡 **Postman Cloud Workspace:** Search for **`Dev_Swarna Bindu Gold Scheme REST API`** in your Postman workspace for pre-configured requests with auto-captured JWT tokens.
 
 ---
 
-## 2. Base Configuration & Headers
+## 🔑 Authentication Flow (OTP & JWT)
 
-### Base URL
-* **Local Android Emulator**: `http://10.0.2.2:5001/api/v1`
-* **Local iOS Simulator**: `http://127.0.0.1:5001/api/v1`
-* **Physical Device (Local Network)**: `http://<YOUR_LOCAL_IP>:5001/api/v1`
-* **Production/Staging Server**: `https://api.swarnabindu.com/api/v1`
+### 1. Mock OTP Mode Active (`MOCK_MODE=true`)
+For fast development without needing real SMS credits:
+* You can test with **any mobile number** (e.g. `+919876543210`).
+* Use the fixed OTP: **`123456`**.
 
-### Required HTTP Headers
-* **Standard JSON Requests**:
-  ```http
-  Content-Type: application/json
-  Authorization: Bearer <accessToken>
-  ```
-* **Multipart File Uploads** (Step 1, 2 & 5 of KYC):
-  ```http
-  Content-Type: multipart/form-data
-  Authorization: Bearer <accessToken>
-  ```
+### 2. Login Flow (2 Steps)
 
----
-
-## 3. KYC Status Lifecycle
-
+#### Step 1: Send OTP
+* **Endpoint:** `POST /auth/send-otp`
+* **Headers:** `Content-Type: application/json`
+* **Body:**
+```json
+{
+  "mobileNumber": "+919876543210"
+}
 ```
-[ PENDING ] ───(Complete Steps 1-4)───> [ PENDING ] ───(Step 5 Upload Selfie)───> [ SUBMITTED ]
-                                                                                      │
-                           ┌──────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────┐
-                           │                                                                                                                  │
-             MOCK_MODE=true (Sandbox Auto-Approval)                                                            MOCK_MODE=false (Production Admin Review)
-                           │                                                                                                                  │
-            [ Automatically Approved in 10 Sec ]                                                                   [ Admin Reviews Submission ]
-                           │                                                                                                                  │
-                           ▼                                                                                            ┌─────────────────────┴─────────────────────┐
-                       APPROVED                                                                                         │                                           │
-                                                                                                                   APPROVED                                      REJECTED
-                                                                                                         (Can subscribe to schemes)                    (Allows Re-uploading)
-```
-
-### KYC Status Enum Values
-- `PENDING`: Default state for newly registered accounts.
-- `SUBMITTED`: Steps 1–5 submitted; awaiting verification.
-- `APPROVED`: Verified account. User can subscribe to Gold Schemes.
-- `REJECTED`: Submission rejected. `rejectedReason` available in profile/status response.
-
----
-
-## 4. Step-by-Step API Integration Walkthrough
-
-### Step 0: Check KYC Status
-* **Endpoint**: `GET /api/v1/user/kyc/status`
-* **Response**:
+* **Response (200 OK):**
 ```json
 {
   "success": true,
-  "message": "KYC status retrieved successfully",
-  "errorCode": null,
+  "message": "OTP sent successfully to your mobile number",
   "data": {
-    "kycStatus": "PENDING",
-    "rejectedReason": null,
-    "lastSyncedAt": "2026-08-13T14:00:00.000Z"
+    "otpSent": true,
+    "expiresInSeconds": 300
   }
 }
 ```
 
----
-
-### Step 1: Personal Information
-* **Endpoint**: `PUT /api/v1/user/kyc/personal` (`multipart/form-data`)
-* **Fields**:
-  - `fullName` (String, Required)
-  - `dob` (String `YYYY-MM-DD`, Required)
-  - `gender` (String `'Male'|'Female'|'Other'`, Required)
-  - `email` (String, Required)
-  - `profilePicture` (File, Optional)
-
----
-
-### Step 2: Identity Documents Verification
-* **Endpoint**: `PUT /api/v1/user/kyc/identity` (`multipart/form-data`)
-* **Fields**:
-  - `aadhaarNumber` (String 12 digits, Required)
-  - `panNumber` (String 10 chars format `ABCDE1234F`, Required)
-  - `aadhaarFront` (File, Required)
-  - `aadhaarBack` (File, Required)
-  - `panCardPhoto` (File, Required)
-
----
-
-### Step 3: Address Information
-* **Endpoint**: `PUT /api/v1/user/kyc/address` (`application/json`)
-* **Body**:
+#### Step 2: Verify OTP
+* **Endpoint:** `POST /auth/verify-otp`
+* **Headers:** `Content-Type: application/json`
+* **Body:**
 ```json
 {
-  "houseName": "Swarna Villa",
-  "street": "MG Road",
-  "landmark": "Near Central Bank",
-  "city": "Trivandrum",
-  "district": "Thiruvananthapuram",
-  "state": "Kerala",
-  "pinCode": "695001",
-  "latitude": 8.5241,
-  "longitude": 76.9366
+  "mobileNumber": "+919876543210",
+  "otp": "123456",
+  "deviceToken": "fcm_client_device_token_from_flutter"
 }
 ```
-
----
-
-### Step 4: Bank Details Verification
-* **Endpoint**: `PUT /api/v1/user/kyc/bank` (`application/json`)
-* **Body**:
-```json
-{
-  "accountHolderName": "John Doe",
-  "bankName": "State Bank of India",
-  "accountNumber": "123456789012",
-  "ifscCode": "SBIN0001234",
-  "branchName": "Main Branch",
-  "upiId": "johndoe@upi"
-}
-```
-
----
-
-### Step 5: Final Selfie Upload & KYC Submission
-* **Endpoint**: `POST /api/v1/user/kyc/submit` (`multipart/form-data`)
-* **Fields**:
-  - `selfie` (File, Required)
-* **Response**:
+* **Response (200 OK):**
 ```json
 {
   "success": true,
-  "message": "KYC documents submitted successfully. Status set to SUBMITTED.",
-  "errorCode": null,
+  "message": "Authentication successful",
   "data": {
-    "kycStatus": "SUBMITTED",
-    "selfieDetails": {
-      "selfiePath": "/uploads/selfies/selfie-172356789.jpg",
-      "capturedAt": "2026-08-13T14:30:00.000Z"
-    }
+    "user": {
+      "id": "60a92b23...",
+      "mobileNumber": "+919876543210",
+      "kycStatus": "APPROVED"
+    },
+    "accessToken": "eyJhbGciOi...",
+    "refreshToken": "eyJhbGciOi..."
   }
 }
 ```
 
----
-
-## 5. Flutter Mobile App Handling Strategy
-
-### Handling `MOCK_MODE=true` (Auto-Approval Sandbox)
-In Mock Mode, after calling `POST /api/v1/user/kyc/submit`:
-1. The server returns status `SUBMITTED`.
-2. The Flutter app displays a **"Verifying your details..."** screen with a spinner.
-3. The Flutter app polls `GET /api/v1/user/kyc/status` every **3 seconds** (or listens to FCM notification).
-4. After **10 seconds**, the backend background timer sets `kycStatus = 'APPROVED'`.
-5. On the next status poll, `kycStatus` will be `'APPROVED'`, and the app navigates to the **Success / Scheme Catalog Screen**.
-
-### Handling `MOCK_MODE=false` (Production Admin Review)
-In Real Production Mode, after calling `POST /api/v1/user/kyc/submit`:
-1. The server returns status `SUBMITTED`.
-2. The Flutter app displays an **"Under Admin Review"** status card.
-3. The user can navigate away.
-4. When an Admin approves/rejects the KYC via the Admin Portal, an FCM Push Notification (`type: 'KYC_STATUS'`) is sent to the Flutter app.
-5. If **APPROVED**: App unlocks Scheme Subscriptions.
-6. If **REJECTED**: App displays the rejection reason (`rejectedReason`) and shows an **"Edit & Re-submit KYC"** button.
-
----
-
-## 6. Flutter Dart Code Implementation Examples
-
-### Multipart Form Upload Helper (Dio Example)
-
-```dart
-import 'package:dio/dio.dart';
-
-class KycRepository {
-  final Dio _dio;
-
-  KycRepository(this._dio);
-
-  /// Submit Step 5 - Selfie & Trigger Submission
-  Future<Map<String, dynamic>> submitKyc({
-    required String selfieFilePath,
-    required String accessToken,
-  }) async {
-    final formData = FormData.fromMap({
-      'selfie': await MultipartFile.fromFile(
-        selfieFilePath,
-        filename: 'selfie.jpg',
-      ),
-    });
-
-    final response = await _dio.post(
-      '/user/kyc/submit',
-      data: formData,
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-          'Content-Type': 'multipart/form-data',
-        },
-      ),
-    );
-
-    return response.data;
-  }
-
-  /// Poll KYC Status
-  Future<String> checkKycStatus(String accessToken) async {
-    final response = await _dio.get(
-      '/user/kyc/status',
-      options: Options(
-        headers: {'Authorization': 'Bearer $accessToken'},
-      ),
-    );
-    return response.data['data']['kycStatus'];
-  }
-}
-```
-
-### Auto-Approval Polling Widget Example (Mock Sandbox Mode)
-
-```dart
-void pollForMockApproval(String token) async {
-  int attempts = 0;
-  Timer.periodic(const Duration(seconds: 3), (timer) async {
-    attempts++;
-    final status = await kycRepo.checkKycStatus(token);
-    
-    if (status == 'APPROVED') {
-      timer.cancel();
-      // Navigate to Scheme Catalog
-      Navigator.pushReplacementNamed(context, '/schemes');
-    } else if (status == 'REJECTED') {
-      timer.cancel();
-      // Show Rejection Reason
-      showRejectionDialog();
-    } else if (attempts > 10) { 
-      // Stop polling after 30s if still pending (e.g. in real mode)
-      timer.cancel();
-    }
-  });
-}
+### 3. Authorized Requests Header
+For all protected endpoints, pass the `accessToken` in the `Authorization` header:
+```http
+Authorization: Bearer <accessToken>
 ```
 
 ---
 
-## 7. Error Codes to Handle in Flutter
+## 🧪 Pre-Seeded Test Accounts
 
-| Error Code | HTTP Status | Description | User Action Required |
-| :--- | :--- | :--- | :--- |
-| `KYC_REQUIRED` | `400 Bad Request` | User attempted to subscribe to a Gold Scheme without `APPROVED` status. | Prompt user to complete KYC. |
-| `INCOMPLETE_KYC_STEPS` | `400 Bad Request` | Step 5 submitted before Steps 1–4 are complete. | Redirect to incomplete step. |
-| `SELFIE_REQUIRED` | `400 Bad Request` | Selfie photo file missing in Step 5. | Re-open camera capture. |
-| `INVALID_OTP` | `400 Bad Request` | OTP verification failed. | Prompt user to re-enter OTP. |
+Use these seeded phone numbers to test all possible user states in your Flutter app UI:
+
+| Mobile Number | Full Name | KYC Status | Test Use Case in Flutter UI |
+|---|---|---|---|
+| **`+919876543210`** | John Mathew | **`APPROVED`** ✅ | Test active savings dashboard, dues, making payments, and gold redemption. |
+| **`+919444333222`** | Prasha Nair | **`APPROVED`** ✅ | Test high-tier gold scheme (`Elite` plan) & multi-month transaction history. |
+| **`+919123456789`** | Sarah Connor | **`SUBMITTED`** ⏳ | Test "KYC Under Review" UI banner & locked scheme joining. |
+| **`+917788990011`** | Ravi Shankar | **`REJECTED`** ❌ | Test "KYC Rejected" alert screen & document re-upload form. |
+| **`+919000111222`** | *New User* | **`PENDING`** 🔄 | Test new user onboarding & step-by-step KYC submission wizard. |
+
+---
+
+## 📑 KYC Submission Steps (5 Steps)
+
+Users must have `kycStatus == 'APPROVED'` before they can subscribe to gold schemes or make payments.
+
+1. **`PUT /user/kyc/personal`** (Multipart Form-Data)
+   * Fields: `fullName`, `dob`, `gender`, `email`, `profilePicture` (file)
+2. **`PUT /user/kyc/identity`** (Multipart Form-Data)
+   * Fields: `aadhaarNumber`, `panNumber`, `aadhaarFront` (file), `aadhaarBack` (file), `panCardPhoto` (file)
+3. **`PUT /user/kyc/address`** (JSON)
+   * Fields: `houseName`, `street`, `city`, `district`, `state`, `pinCode`, `latitude`, `longitude`
+4. **`PUT /user/kyc/bank`** (JSON)
+   * Fields: `accountHolderName`, `bankName`, `accountNumber`, `confirmAccountNumber`, `ifscCode`, `branchName`, `upiId`
+5. **`POST /user/kyc/submit`** (Multipart Form-Data)
+   * Fields: `selfie` (file)
+   * *Status changes from `PENDING` → `SUBMITTED`.*
+
+---
+
+## 💳 Payment Flow Integration
+
+### Step 1: Fetch Dues
+* **Endpoint:** `GET /payments/dues`
+* Returns current month's due amount, due date (5th of each month), and pending dues count.
+
+### Step 2: Initialize Payment (Order Creation)
+* **Endpoint:** `POST /payments/initialize`
+* **Body:**
+```json
+{
+  "userSchemeId": "<userSchemeId_from_profile_or_dues>",
+  "installmentType": "CURRENT_MONTH",
+  "amount": 5000
+}
+```
+* **Returns:** `transactionId` and `razorpayOrderId`.
+
+### Step 3: Verify Payment & Credit Gold
+* **Endpoint:** `POST /payments/verify`
+* **Body (Dev / Mock Mode):**
+```json
+{
+  "transactionId": "<transactionId_from_step_2>",
+  "status": "SUCCESSFUL",
+  "paymentMethod": "UPI - Google Pay"
+}
+```
+* **Result:** Backend computes gold weight gained based on today's live rate and credits it to the user's balance.
+
+---
+
+## 💰 Live Gold Rate & Redemptions
+
+* **Get Gold Rate:** `GET /gold-rate/today`
+  * Returns 22K (per gram) and 24K (per 8 grams) live prices.
+* **Redeem Gold:** `POST /gold/redeem`
+  * Body: `{ "userSchemeId": "...", "goldQuantity": 1.43 }`
+  * Liquidates gold balance into cash payout to user's registered bank account.
+
+---
+
+## 📦 Hand-off Files Checklist for Developer
+
+When sharing with the Flutter Developer, provide:
+1. 📄 **This Integration Guide:** `FLUTTER_INTEGRATION_GUIDE.md`
+2. 📄 **Postman Collection File:** `Swarna_Bindu_Gold_Scheme_API.postman_collection.json`
+3. 🌐 **Live Dev API Endpoint:** `https://scheme.bindujewellery.com/api/v1`
