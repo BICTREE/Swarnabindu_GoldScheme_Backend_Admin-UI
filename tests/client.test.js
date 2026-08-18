@@ -202,6 +202,210 @@ describe('Swarna Bindu Client REST API Integration Tests', () => {
     });
   });
 
+  // --- UNIFIED KYC SINGLE-CALL SUBMISSION (/kyc/submit-full) ---
+  describe('Unified KYC Single-Call Submission (/kyc/submit-full)', () => {
+    const unifiedUserMobile = '+919999888877';
+    let unifiedUserToken = '';
+
+    beforeAll(async () => {
+      // Authenticate a fresh user for unified KYC testing
+      await request(app)
+        .post('/api/v1/auth/send-otp')
+        .send({ mobileNumber: unifiedUserMobile });
+
+      const otpRes = await request(app)
+        .post('/api/v1/auth/verify-otp')
+        .send({ mobileNumber: unifiedUserMobile, otp: '123456' });
+
+      unifiedUserToken = otpRes.body.data.accessToken;
+    });
+
+    it('should fail /kyc/submit-full without auth token', async () => {
+      const res = await request(app).post('/api/v1/user/kyc/submit-full');
+      expect(res.status).toBe(401);
+    });
+
+    it('should fail /kyc/submit-full if selfie is missing', async () => {
+      const res = await request(app)
+        .post('/api/v1/user/kyc/submit-full')
+        .set('Authorization', `Bearer ${unifiedUserToken}`)
+        .field('fullName', 'Ravi Kumar')
+        .field('dob', '1995-06-15')
+        .field('gender', 'Male')
+        .field('email', 'ravi@example.com')
+        .field('aadhaarNumber', '123456789012')
+        .field('panNumber', 'ABCDE1234F')
+        .field('houseName', 'Green Villa')
+        .field('street', 'MG Road')
+        .field('city', 'Thrissur')
+        .field('district', 'Thrissur')
+        .field('state', 'Kerala')
+        .field('pinCode', '680001')
+        .field('accountHolderName', 'Ravi Kumar')
+        .field('bankName', 'State Bank of India')
+        .field('accountNumber', '123456789012')
+        .field('confirmAccountNumber', '123456789012')
+        .field('ifscCode', 'SBIN0001234')
+        .field('branchName', 'Thrissur Main');
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.errorCode).toBe('SELFIE_REQUIRED');
+    });
+
+    it('should fail /kyc/submit-full on invalid personal info (bad email)', async () => {
+      const res = await request(app)
+        .post('/api/v1/user/kyc/submit-full')
+        .set('Authorization', `Bearer ${unifiedUserToken}`)
+        .field('fullName', 'Ravi Kumar')
+        .field('dob', '1995-06-15')
+        .field('gender', 'Male')
+        .field('email', 'not-a-valid-email')
+        .field('aadhaarNumber', '123456789012')
+        .field('panNumber', 'ABCDE1234F')
+        .field('houseName', 'Green Villa')
+        .field('street', 'MG Road')
+        .field('city', 'Thrissur')
+        .field('district', 'Thrissur')
+        .field('state', 'Kerala')
+        .field('pinCode', '680001')
+        .field('accountHolderName', 'Ravi Kumar')
+        .field('bankName', 'State Bank of India')
+        .field('accountNumber', '123456789012')
+        .field('confirmAccountNumber', '123456789012')
+        .field('ifscCode', 'SBIN0001234')
+        .field('branchName', 'Thrissur Main')
+        .attach('selfie', Buffer.from('selfie'), 'selfie.png');
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.errorCode).toBe('VALIDATION_ERROR');
+      expect(res.body.message).toContain('Personal info');
+    });
+
+    it('should fail /kyc/submit-full on invalid Aadhaar (less than 12 digits)', async () => {
+      const res = await request(app)
+        .post('/api/v1/user/kyc/submit-full')
+        .set('Authorization', `Bearer ${unifiedUserToken}`)
+        .field('fullName', 'Ravi Kumar')
+        .field('dob', '1995-06-15')
+        .field('gender', 'Male')
+        .field('email', 'ravi@example.com')
+        .field('aadhaarNumber', '123456') // invalid length
+        .field('panNumber', 'ABCDE1234F')
+        .field('houseName', 'Green Villa')
+        .field('street', 'MG Road')
+        .field('city', 'Thrissur')
+        .field('district', 'Thrissur')
+        .field('state', 'Kerala')
+        .field('pinCode', '680001')
+        .field('accountHolderName', 'Ravi Kumar')
+        .field('bankName', 'State Bank of India')
+        .field('accountNumber', '123456789012')
+        .field('confirmAccountNumber', '123456789012')
+        .field('ifscCode', 'SBIN0001234')
+        .field('branchName', 'Thrissur Main')
+        .attach('selfie', Buffer.from('selfie'), 'selfie.png');
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.errorCode).toBe('VALIDATION_ERROR');
+      expect(res.body.message).toContain('Identity info');
+    });
+
+    it('should fail /kyc/submit-full on bank account mismatch', async () => {
+      const res = await request(app)
+        .post('/api/v1/user/kyc/submit-full')
+        .set('Authorization', `Bearer ${unifiedUserToken}`)
+        .field('fullName', 'Ravi Kumar')
+        .field('dob', '1995-06-15')
+        .field('gender', 'Male')
+        .field('email', 'ravi@example.com')
+        .field('aadhaarNumber', '123456789012')
+        .field('panNumber', 'ABCDE1234F')
+        .field('houseName', 'Green Villa')
+        .field('street', 'MG Road')
+        .field('city', 'Thrissur')
+        .field('district', 'Thrissur')
+        .field('state', 'Kerala')
+        .field('pinCode', '680001')
+        .field('accountHolderName', 'Ravi Kumar')
+        .field('bankName', 'State Bank of India')
+        .field('accountNumber', '123456789012')
+        .field('confirmAccountNumber', '999999999999') // mismatch
+        .field('ifscCode', 'SBIN0001234')
+        .field('branchName', 'Thrissur Main')
+        .attach('selfie', Buffer.from('selfie'), 'selfie.png');
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.errorCode).toBe('VALIDATION_ERROR');
+      expect(res.body.message).toContain('Bank details');
+    });
+
+    it('should successfully submit full KYC with all sections & all 5 files in one call', async () => {
+      const res = await request(app)
+        .post('/api/v1/user/kyc/submit-full')
+        .set('Authorization', `Bearer ${unifiedUserToken}`)
+        // 1. Personal Info
+        .field('fullName', 'Ravi Kumar')
+        .field('dob', '1995-06-15')
+        .field('gender', 'Male')
+        .field('email', 'ravi@example.com')
+        .attach('profilePicture', Buffer.from('profile pic data'), 'profile.png')
+        // 2. Identity Info
+        .field('aadhaarNumber', '123456789012')
+        .field('panNumber', 'ABCDE1234F')
+        .field('digiLockerConnected', 'false')
+        .attach('aadhaarFront', Buffer.from('aadhaar front data'), 'aadhaar_front.png')
+        .attach('aadhaarBack', Buffer.from('aadhaar back data'), 'aadhaar_back.png')
+        .attach('panCardPhoto', Buffer.from('pan photo data'), 'pan_card.png')
+        // 3. Address Info
+        .field('houseName', 'Green Villa')
+        .field('street', 'MG Road')
+        .field('landmark', 'Near Bus Stand')
+        .field('city', 'Thrissur')
+        .field('district', 'Thrissur')
+        .field('state', 'Kerala')
+        .field('pinCode', '680001')
+        .field('latitude', 10.5276)
+        .field('longitude', 76.2144)
+        // 4. Bank Details
+        .field('accountHolderName', 'Ravi Kumar')
+        .field('bankName', 'State Bank of India')
+        .field('accountNumber', '123456789012')
+        .field('confirmAccountNumber', '123456789012')
+        .field('ifscCode', 'SBIN0001234')
+        .field('branchName', 'Thrissur Main Branch')
+        .field('upiId', 'ravi@okhdfcbank')
+        // 5. Selfie
+        .attach('selfie', Buffer.from('live selfie data'), 'selfie.png');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.kycStatus).toBe('SUBMITTED');
+      expect(res.body.data.personalInfo.fullName).toBe('Ravi Kumar');
+      expect(res.body.data.personalInfo.profilePicture).toMatch(/^\/uploads\/profiles\//);
+      expect(res.body.data.identityVerification.aadhaarLast4).toBe('9012');
+      expect(res.body.data.identityVerification.aadhaarFront).toMatch(/^\/uploads\/kyc\//);
+      expect(res.body.data.identityVerification.aadhaarBack).toMatch(/^\/uploads\/kyc\//);
+      expect(res.body.data.identityVerification.panCardPhoto).toMatch(/^\/uploads\/kyc\//);
+      expect(res.body.data.addressInfo.city).toBe('Thrissur');
+      expect(res.body.data.bankDetails.bankName).toBe('State Bank of India');
+      expect(res.body.data.bankDetails.accountLast4).toBe('9012');
+      expect(res.body.data.selfieDetails.selfiePath).toMatch(/^\/uploads\/selfies\//);
+
+      // Verify direct database contents (encrypted at rest verification)
+      const rawUser = await mongoose.connection.collection('users').findOne({ mobileNumber: unifiedUserMobile });
+      expect(rawUser.kycStatus).toBe('SUBMITTED');
+      expect(rawUser.kycDetails.identityVerification.aadhaarNumber).toContain(':'); // Encrypted format (iv:ciphertext)
+      expect(rawUser.kycDetails.identityVerification.aadhaarLast4).toBe('9012');
+      expect(rawUser.kycDetails.identityVerification.panNumber).toContain(':'); // Encrypted format
+      expect(rawUser.kycDetails.bankDetails.accountNumber).toContain(':'); // Encrypted format
+      expect(rawUser.kycDetails.bankDetails.accountLast4).toBe('9012');
+    });
+  });
+
   // --- SCHEMES CATALOG TESTS ---
   describe('Schemes Catalog Endpoints', () => {
     it('should list catalog schemes', async () => {
