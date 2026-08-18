@@ -338,7 +338,7 @@
               ]
             },
             {
-              "name": "2. KYC Step 1: Personal Details",
+              "name": "2. [Step] KYC Step 1: Personal Details (draft save)",
               "request": {
                 "method": "PUT",
                 "header": [],
@@ -413,7 +413,7 @@
               ]
             },
             {
-              "name": "3. KYC Step 2: Identity Documents",
+              "name": "3. [Step] KYC Step 2: Identity Documents (draft save)",
               "request": {
                 "method": "PUT",
                 "header": [],
@@ -483,7 +483,7 @@
               ]
             },
             {
-              "name": "4. KYC Step 3: Address Info",
+              "name": "4. [Step] KYC Step 3: Address Info (draft save)",
               "request": {
                 "method": "PUT",
                 "header": [],
@@ -542,7 +542,7 @@
               ]
             },
             {
-              "name": "5. KYC Step 4: Bank account details",
+              "name": "5. [Step] KYC Step 4: Bank Details (draft save)",
               "request": {
                 "method": "PUT",
                 "header": [],
@@ -601,7 +601,7 @@
               ]
             },
             {
-              "name": "6. KYC Step 5: Upload Selfie & Finalize",
+              "name": "6. [Step] KYC Step 5: Upload Selfie & Finalize (draft save)",
               "request": {
                 "method": "POST",
                 "header": [],
@@ -651,6 +651,270 @@
                     }
                   ],
                   "body": "{\n  \"success\": true,\n  \"message\": \"KYC documents submitted successfully. Status set to SUBMITTED.\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"SUBMITTED\",\n    \"selfieDetails\": {\n      \"selfiePath\": \"/uploads/selfies/selfie.png\",\n      \"capturedAt\": \"2026-07-08T12:00:00.000Z\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "7. KYC Unified Submit (All Sections — Single Call)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "fullName",
+                      "value": "Ravi Kumar",
+                      "type": "text",
+                      "description": "Full legal name (min 2 chars)"
+                    },
+                    {
+                      "key": "dob",
+                      "value": "1995-06-15",
+                      "type": "text",
+                      "description": "Date of birth in ISO format YYYY-MM-DD"
+                    },
+                    {
+                      "key": "gender",
+                      "value": "Male",
+                      "type": "text",
+                      "description": "One of: Male, Female, Other"
+                    },
+                    {
+                      "key": "email",
+                      "value": "ravi@example.com",
+                      "type": "text",
+                      "description": "Valid email address"
+                    },
+                    {
+                      "key": "profilePicture",
+                      "src": "",
+                      "type": "file",
+                      "description": "Optional profile photo (JPEG/PNG, max 5 MB)"
+                    },
+                    {
+                      "key": "aadhaarNumber",
+                      "value": "123456789012",
+                      "type": "text",
+                      "description": "Exactly 12-digit Aadhaar number"
+                    },
+                    {
+                      "key": "panNumber",
+                      "value": "ABCDE1234F",
+                      "type": "text",
+                      "description": "PAN card number (ABCDE1234F format)"
+                    },
+                    {
+                      "key": "digiLockerConnected",
+                      "value": "false",
+                      "type": "text",
+                      "description": "Boolean — whether DigiLocker is linked"
+                    },
+                    {
+                      "key": "aadhaarFront",
+                      "src": "",
+                      "type": "file",
+                      "description": "Optional Aadhaar front image (JPEG/PNG, max 5 MB)"
+                    },
+                    {
+                      "key": "aadhaarBack",
+                      "src": "",
+                      "type": "file",
+                      "description": "Optional Aadhaar back image (JPEG/PNG, max 5 MB)"
+                    },
+                    {
+                      "key": "panCardPhoto",
+                      "src": "",
+                      "type": "file",
+                      "description": "Optional PAN card image (JPEG/PNG, max 5 MB)"
+                    },
+                    {
+                      "key": "houseName",
+                      "value": "Green Villa",
+                      "type": "text",
+                      "description": "House / flat name or number"
+                    },
+                    {
+                      "key": "street",
+                      "value": "MG Road",
+                      "type": "text",
+                      "description": "Street name"
+                    },
+                    {
+                      "key": "landmark",
+                      "value": "Near KSRTC Bus Stand",
+                      "type": "text",
+                      "description": "Optional landmark"
+                    },
+                    {
+                      "key": "city",
+                      "value": "Thrissur",
+                      "type": "text",
+                      "description": "City name"
+                    },
+                    {
+                      "key": "district",
+                      "value": "Thrissur",
+                      "type": "text",
+                      "description": "District name"
+                    },
+                    {
+                      "key": "state",
+                      "value": "Kerala",
+                      "type": "text",
+                      "description": "State name"
+                    },
+                    {
+                      "key": "pinCode",
+                      "value": "680001",
+                      "type": "text",
+                      "description": "Exactly 6-digit PIN code"
+                    },
+                    {
+                      "key": "latitude",
+                      "value": "10.5276",
+                      "type": "text",
+                      "description": "Optional GPS latitude"
+                    },
+                    {
+                      "key": "longitude",
+                      "value": "76.2144",
+                      "type": "text",
+                      "description": "Optional GPS longitude"
+                    },
+                    {
+                      "key": "accountHolderName",
+                      "value": "Ravi Kumar",
+                      "type": "text",
+                      "description": "Name as on bank account"
+                    },
+                    {
+                      "key": "bankName",
+                      "value": "State Bank of India",
+                      "type": "text",
+                      "description": "Full bank name"
+                    },
+                    {
+                      "key": "accountNumber",
+                      "value": "123456789012",
+                      "type": "text",
+                      "description": "Bank account number (9-18 chars)"
+                    },
+                    {
+                      "key": "confirmAccountNumber",
+                      "value": "123456789012",
+                      "type": "text",
+                      "description": "Must match accountNumber exactly"
+                    },
+                    {
+                      "key": "ifscCode",
+                      "value": "SBIN0001234",
+                      "type": "text",
+                      "description": "Valid IFSC code (e.g. UTIB0001234)"
+                    },
+                    {
+                      "key": "branchName",
+                      "value": "Thrissur Main Branch",
+                      "type": "text",
+                      "description": "Bank branch name"
+                    },
+                    {
+                      "key": "upiId",
+                      "value": "ravi@upi",
+                      "type": "text",
+                      "description": "Optional UPI handle"
+                    },
+                    {
+                      "key": "selfie",
+                      "src": "",
+                      "type": "file",
+                      "description": "REQUIRED — Live selfie (JPEG/PNG, max 5 MB)"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/user/kyc/submit-full",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "kyc",
+                    "submit-full"
+                  ]
+                },
+                "description": "Submits ALL KYC sections (personal, identity, address, bank + selfie) in a single multipart/form-data request. Eliminates the need for the 5 individual step endpoints. On success, kycStatus is immediately set to SUBMITTED. Auto-approves to APPROVED after 10 seconds in the dev sandbox."
+              },
+              "response": [
+                {
+                  "name": "200 OK — KYC Submitted (all sections)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/user/kyc/submit-full"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"KYC submitted successfully in a single request. Status set to SUBMITTED.\",\n  \"errorCode\": null,\n  \"data\": {\n    \"kycStatus\": \"SUBMITTED\",\n    \"personalInfo\": {\n      \"fullName\": \"Ravi Kumar\",\n      \"dob\": \"1995-06-15T00:00:00.000Z\",\n      \"gender\": \"Male\",\n      \"email\": \"ravi@example.com\",\n      \"profilePicture\": \"/uploads/profiles/profilePicture-userId-ts.jpg\"\n    },\n    \"identityVerification\": {\n      \"aadhaarLast4\": \"9012\",\n      \"panNumber\": \"ABCDE1234F\",\n      \"digiLockerConnected\": false,\n      \"aadhaarFront\": \"/uploads/kyc/aadhaarFront-userId-ts.jpg\",\n      \"aadhaarBack\": \"/uploads/kyc/aadhaarBack-userId-ts.jpg\",\n      \"panCardPhoto\": \"/uploads/kyc/panCardPhoto-userId-ts.jpg\"\n    },\n    \"addressInfo\": {\n      \"houseName\": \"Green Villa\",\n      \"street\": \"MG Road\",\n      \"landmark\": \"Near KSRTC Bus Stand\",\n      \"city\": \"Thrissur\",\n      \"district\": \"Thrissur\",\n      \"state\": \"Kerala\",\n      \"pinCode\": \"680001\",\n      \"locationCoordinates\": {\n        \"type\": \"Point\",\n        \"coordinates\": [\n          76.2144,\n          10.5276\n        ]\n      }\n    },\n    \"bankDetails\": {\n      \"accountHolderName\": \"Ravi Kumar\",\n      \"bankName\": \"State Bank of India\",\n      \"accountLast4\": \"9012\",\n      \"ifscCode\": \"SBIN0001234\",\n      \"branchName\": \"Thrissur Main Branch\"\n    },\n    \"selfieDetails\": {\n      \"selfiePath\": \"/uploads/selfies/selfie-userId-ts.jpg\",\n      \"capturedAt\": \"2026-08-18T08:00:00.000Z\",\n      \"dataRetentionExpiry\": null\n    }\n  }\n}"
+                },
+                {
+                  "name": "400 — Selfie Required",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/user/kyc/submit-full"
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"message\": \"Selfie capture is required to submit KYC\",\n  \"errorCode\": \"SELFIE_REQUIRED\",\n  \"data\": null\n}"
+                },
+                {
+                  "name": "400 — Validation Error (example: invalid Aadhaar)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/user/kyc/submit-full"
+                    }
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": false,\n  \"message\": \"Identity info: Aadhaar number must contain exactly 12 digits\",\n  \"errorCode\": \"VALIDATION_ERROR\",\n  \"data\": null\n}"
                 }
               ]
             },

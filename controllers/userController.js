@@ -445,6 +445,223 @@ const submitKyc = async (req, res, next) => {
 };
 
 /**
+ * @desc    Submit ALL KYC sections in a single request (unified fast-path)
+ * @route   POST /api/v1/user/kyc/submit-full
+ * @access  Private
+ * @note    Accepts all text fields + up to 5 files (profilePicture, aadhaarFront,
+ *          aadhaarBack, panCardPhoto, selfie) in one multipart/form-data body.
+ *          The individual step routes (PUT /kyc/personal|identity|address|bank) and
+ *          the selfie-only POST /kyc/submit are kept intact for draft/partial saves.
+ */
+const submitKycFull = async (req, res, next) => {
+  try {
+    // ── 1. Validate Personal Info ────────────────────────────────────────────
+    const { fullName, dob, gender, email } = req.body;
+    const personalValidation = personalInfoSchema.validate({ fullName, dob, gender, email });
+    if (personalValidation.error) {
+      return res.status(400).json({
+        success: false,
+        message: `Personal info: ${personalValidation.error.details[0].message}`,
+        errorCode: 'VALIDATION_ERROR',
+        data: null
+      });
+    }
+
+    // ── 2. Validate Identity ─────────────────────────────────────────────────
+    const { aadhaarNumber, panNumber, digiLockerConnected } = req.body;
+    const identityValidation = identitySchema.validate({
+      aadhaarNumber,
+      panNumber,
+      digiLockerConnected: digiLockerConnected === 'true' || digiLockerConnected === true
+    });
+    if (identityValidation.error) {
+      return res.status(400).json({
+        success: false,
+        message: `Identity info: ${identityValidation.error.details[0].message}`,
+        errorCode: 'VALIDATION_ERROR',
+        data: null
+      });
+    }
+
+    // ── 3. Validate Address ──────────────────────────────────────────────────
+    const addressValidation = addressSchema.validate({
+      houseName: req.body.houseName,
+      street: req.body.street,
+      landmark: req.body.landmark,
+      city: req.body.city,
+      district: req.body.district,
+      state: req.body.state,
+      pinCode: req.body.pinCode,
+      latitude: req.body.latitude,
+      longitude: req.body.longitude
+    });
+    if (addressValidation.error) {
+      return res.status(400).json({
+        success: false,
+        message: `Address info: ${addressValidation.error.details[0].message}`,
+        errorCode: 'VALIDATION_ERROR',
+        data: null
+      });
+    }
+
+    // ── 4. Validate Bank Details ─────────────────────────────────────────────
+    const bankValidation = bankSchema.validate({
+      accountHolderName: req.body.accountHolderName,
+      bankName: req.body.bankName,
+      accountNumber: req.body.accountNumber,
+      confirmAccountNumber: req.body.confirmAccountNumber,
+      ifscCode: req.body.ifscCode,
+      branchName: req.body.branchName,
+      upiId: req.body.upiId
+    });
+    if (bankValidation.error) {
+      return res.status(400).json({
+        success: false,
+        message: `Bank details: ${bankValidation.error.details[0].message}`,
+        errorCode: 'VALIDATION_ERROR',
+        data: null
+      });
+    }
+
+    // ── 5. Selfie is mandatory for final submission ──────────────────────────
+    const files = req.files || {};
+    if (!files.selfie || !files.selfie[0]) {
+      return res.status(400).json({
+        success: false,
+        message: 'Selfie capture is required to submit KYC',
+        errorCode: 'SELFIE_REQUIRED',
+        data: null
+      });
+    }
+
+    // ── 6. Fetch user and populate ALL sub-documents in one shot ─────────────
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User profile not found',
+        errorCode: 'USER_NOT_FOUND',
+        data: null
+      });
+    }
+
+    // Personal info
+    user.kycDetails.personalInfo.fullName = fullName;
+    user.kycDetails.personalInfo.dob = new Date(dob);
+    user.kycDetails.personalInfo.gender = gender;
+    user.kycDetails.personalInfo.email = email;
+    if (files.profilePicture && files.profilePicture[0]) {
+      user.kycDetails.personalInfo.profilePicture = `/uploads/profiles/${files.profilePicture[0].filename}`;
+    }
+
+    // Identity verification
+    user.kycDetails.identityVerification.aadhaarNumber = aadhaarNumber;
+    user.kycDetails.identityVerification.panNumber = panNumber;
+    user.kycDetails.identityVerification.digiLockerConnected =
+      digiLockerConnected === 'true' || digiLockerConnected === true;
+    if (files.aadhaarFront && files.aadhaarFront[0]) {
+      user.kycDetails.identityVerification.aadhaarFront = `/uploads/kyc/${files.aadhaarFront[0].filename}`;
+    }
+    if (files.aadhaarBack && files.aadhaarBack[0]) {
+      user.kycDetails.identityVerification.aadhaarBack = `/uploads/kyc/${files.aadhaarBack[0].filename}`;
+    }
+    if (files.panCardPhoto && files.panCardPhoto[0]) {
+      user.kycDetails.identityVerification.panCardPhoto = `/uploads/kyc/${files.panCardPhoto[0].filename}`;
+    }
+
+    // Address info
+    const { houseName, street, landmark, city, district, state, pinCode, latitude, longitude } = req.body;
+    user.kycDetails.addressInfo.houseName = houseName;
+    user.kycDetails.addressInfo.street = street;
+    user.kycDetails.addressInfo.landmark = landmark || null;
+    user.kycDetails.addressInfo.city = city;
+    user.kycDetails.addressInfo.district = district;
+    user.kycDetails.addressInfo.state = state;
+    user.kycDetails.addressInfo.pinCode = pinCode;
+    if (latitude !== undefined && longitude !== undefined) {
+      user.kycDetails.addressInfo.locationCoordinates = {
+        type: 'Point',
+        coordinates: [parseFloat(longitude), parseFloat(latitude)]
+      };
+    }
+
+    // Bank details
+    const { accountHolderName, bankName, accountNumber, ifscCode, branchName, upiId } = req.body;
+    user.kycDetails.bankDetails.accountHolderName = accountHolderName;
+    user.kycDetails.bankDetails.bankName = bankName;
+    user.kycDetails.bankDetails.accountNumber = accountNumber;
+    user.kycDetails.bankDetails.ifscCode = ifscCode;
+    user.kycDetails.bankDetails.branchName = branchName;
+    user.kycDetails.bankDetails.upiId = upiId || null;
+
+    // Selfie
+    user.kycDetails.selfieVerification.selfiePath = `/uploads/selfies/${files.selfie[0].filename}`;
+    user.kycDetails.selfieVerification.capturedAt = new Date();
+
+    // ── 7. Single DB write + status transition ───────────────────────────────
+    user.kycStatus = 'SUBMITTED';
+    user.lastSyncedAt = new Date();
+    await user.save(); // All sub-documents saved in one operation
+
+    // ── 8. Notify & mock auto-approval (same as individual submit flow) ───────
+    await helpers.sendMockNotification(
+      user._id,
+      'KYC Details Received',
+      'Your KYC has been submitted successfully and is currently under review.',
+      'KYC_STATUS'
+    );
+
+    setTimeout(async () => {
+      try {
+        const checkUser = await User.findById(user._id);
+        if (checkUser && checkUser.kycStatus === 'SUBMITTED') {
+          checkUser.kycStatus = 'APPROVED';
+          await checkUser.save();
+          await helpers.sendMockNotification(
+            checkUser._id,
+            'KYC Approved Successfully!',
+            'Congratulations, your KYC has been verified. You can now subscribe to any gold scheme.',
+            'KYC_STATUS'
+          );
+          console.log(`🚀 [KYC AUTO-APPROVED] User: ${checkUser.mobileNumber}`);
+        }
+      } catch (err) {
+        console.error(`Auto-approval failed: ${err.message}`);
+      }
+    }, 10000);
+
+    return res.status(200).json({
+      success: true,
+      message: 'KYC submitted successfully in a single request. Status set to SUBMITTED.',
+      errorCode: null,
+      data: {
+        kycStatus: user.kycStatus,
+        personalInfo: user.kycDetails.personalInfo,
+        identityVerification: {
+          aadhaarLast4: user.kycDetails.identityVerification.aadhaarLast4,
+          panNumber: user.kycDetails.identityVerification.panNumber,
+          digiLockerConnected: user.kycDetails.identityVerification.digiLockerConnected,
+          aadhaarFront: user.kycDetails.identityVerification.aadhaarFront,
+          aadhaarBack: user.kycDetails.identityVerification.aadhaarBack,
+          panCardPhoto: user.kycDetails.identityVerification.panCardPhoto
+        },
+        addressInfo: user.kycDetails.addressInfo,
+        bankDetails: {
+          accountHolderName: user.kycDetails.bankDetails.accountHolderName,
+          bankName: user.kycDetails.bankDetails.bankName,
+          accountLast4: user.kycDetails.bankDetails.accountLast4,
+          ifscCode: user.kycDetails.bankDetails.ifscCode,
+          branchName: user.kycDetails.bankDetails.branchName
+        },
+        selfieDetails: user.kycDetails.selfieVerification
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * @desc    Get KYC Status
  * @route   GET /api/v1/user/kyc/status
  * @access  Private
@@ -473,5 +690,6 @@ module.exports = {
   updateAddressKyc,
   updateBankKyc,
   submitKyc,
+  submitKycFull,
   getKycStatus
 };
