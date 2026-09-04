@@ -683,8 +683,133 @@ const getKycStatus = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get complete aggregated customer dashboard in a single call
+ * @route   GET /api/v1/user/dashboard
+ * @access  Private
+ */
+const getDashboard = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // Run parallel queries
+    const [user, userSchemes, latestRate] = await Promise.all([
+      User.findById(userId),
+      UserScheme.find({ userId }).populate('schemeId').sort({ createdAt: -1 }),
+      GoldRate.findOne().sort({ lastUpdated: -1 })
+    ]);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User profile not found',
+        errorCode: 'USER_NOT_FOUND',
+        data: null
+      });
+    }
+
+    const ratePerGram24K = latestRate ? (latestRate.rate24K_per_8g / 8) : 7000;
+    const ratePerGram22K = latestRate ? (latestRate.rate22K_per_g || Math.round(ratePerGram24K * 22 / 24)) : 6417;
+
+    const activeSchemes = userSchemes.filter(s => s.status === 'ACTIVE');
+    const redeemedSchemes = userSchemes.filter(s => s.status === 'REDEEMED');
+
+    const totalGramsSaved = userSchemes.reduce((sum, s) => sum + (s.goldAccumulated || 0), 0);
+    const totalAmountPaid = userSchemes.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
+
+    const currentGoldValue = Math.round(totalGramsSaved * ratePerGram24K * 100) / 100;
+
+    let nextDueDate = null;
+    let nextInstallmentDue = 0;
+
+    const portfolio = userSchemes.map(s => {
+      const scheme = s.schemeId || {};
+      const monthly = s.monthlyInvestment || scheme.monthlyInvestment || 0;
+      const paid = s.totalPaid || 0;
+      const duration = scheme.durationMonths || 11;
+      const installmentsPaid = monthly > 0 ? Math.floor(paid / monthly) : 0;
+      const remainingInstallments = Math.max(0, duration - installmentsPaid);
+      const progressPercent = duration > 0 ? Math.min(100, Math.round((installmentsPaid / duration) * 100)) : 0;
+
+      if (s.status === 'ACTIVE') {
+        nextInstallmentDue += monthly;
+        const d = new Date(s.startDate);
+        d.setMonth(d.getMonth() + installmentsPaid);
+        d.setDate(5);
+        if (!nextDueDate || d < nextDueDate) {
+          nextDueDate = d;
+        }
+      }
+
+      return {
+        userSchemeId: s._id,
+        schemeId: scheme._id || null,
+        schemeName: scheme.name || 'Swarna Bindu Scheme',
+        monthlyInvestment: monthly,
+        durationMonths: duration,
+        installmentsPaid,
+        totalInstallments: duration,
+        remainingInstallments,
+        progressPercent,
+        goldAccumulated: s.goldAccumulated || 0,
+        goalGoldGram: s.goalGoldGram || 0,
+        totalAmountPaid: paid,
+        status: s.status,
+        startDate: s.startDate,
+        endDate: s.endDate,
+        redeemedAt: s.redeemedAt,
+        maturityBenefitPercent: scheme.maturityBenefitPercent || 0
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'User dashboard retrieved successfully',
+      errorCode: null,
+      data: {
+        user: {
+          id: user._id,
+          mobileNumber: user.mobileNumber,
+          fullName: user.kycDetails?.personalInfo?.fullName || null,
+          email: user.kycDetails?.personalInfo?.email || null,
+          profilePicture: user.kycDetails?.personalInfo?.profilePicture || null,
+          kycStatus: user.kycStatus,
+          isVerified: user.isVerified
+        },
+        goldRate: latestRate ? {
+          rate22K_per_g: latestRate.rate22K_per_g,
+          rate24K_per_8g: latestRate.rate24K_per_8g,
+          ratePerGram24K: Math.round((latestRate.rate24K_per_8g / 8) * 100) / 100,
+          ratePerGram22K,
+          currency: 'INR',
+          lastUpdated: latestRate.lastUpdated
+        } : {
+          ratePerGram24K,
+          ratePerGram22K,
+          currency: 'INR',
+          lastUpdated: new Date()
+        },
+        summary: {
+          totalSchemes: userSchemes.length,
+          activeSchemes: activeSchemes.length,
+          redeemedSchemes: redeemedSchemes.length,
+          totalGramsSaved: Math.round(totalGramsSaved * 1000) / 1000,
+          totalAmountPaid: Math.round(totalAmountPaid * 100) / 100,
+          currentGoldValue,
+          nextInstallmentDue,
+          nextDueDate: nextDueDate ? nextDueDate.toISOString().split('T')[0] : null
+        },
+        portfolio
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getProfile,
+  getDashboard,
   updatePersonalKyc,
   updateIdentityKyc,
   updateAddressKyc,

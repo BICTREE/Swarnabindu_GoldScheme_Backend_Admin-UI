@@ -144,6 +144,70 @@ Users must have `kycStatus == 'APPROVED'` before they can subscribe to gold sche
 
 ---
 
+## 📊 Customer Home Dashboard (All-in-One Aggregation)
+
+Fetch the complete customer home screen data in a single network request:
+* **Endpoint:** `GET /user/dashboard` *(or `/users/dashboard`)*
+* **Headers:** `Authorization: Bearer <accessToken>`
+* **Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "User dashboard retrieved successfully",
+  "data": {
+    "user": {
+      "id": "60a92b23...",
+      "mobileNumber": "+919876543210",
+      "fullName": "John Mathew",
+      "email": "john@gmail.com",
+      "profilePicture": "/uploads/profile-123.jpg",
+      "kycStatus": "APPROVED",
+      "isVerified": true
+    },
+    "goldRate": {
+      "rate22K_per_g": 7000,
+      "rate24K_per_8g": 56000,
+      "ratePerGram24K": 7000,
+      "ratePerGram22K": 7000,
+      "currency": "INR",
+      "lastUpdated": "2026-09-04T10:00:00.000Z"
+    },
+    "summary": {
+      "totalSchemes": 1,
+      "activeSchemes": 1,
+      "redeemedSchemes": 0,
+      "totalGramsSaved": 0.714,
+      "totalAmountPaid": 5000,
+      "currentGoldValue": 4998,
+      "nextInstallmentDue": 5000,
+      "nextDueDate": "2026-10-05"
+    },
+    "portfolio": [
+      {
+        "userSchemeId": "60b94c31...",
+        "schemeId": "60a81d11...",
+        "schemeName": "Swarna Bindu Popular",
+        "monthlyInvestment": 5000,
+        "durationMonths": 11,
+        "installmentsPaid": 1,
+        "totalInstallments": 11,
+        "remainingInstallments": 10,
+        "progressPercent": 9,
+        "goldAccumulated": 0.714,
+        "goalGoldGram": 7.857,
+        "totalAmountPaid": 5000,
+        "status": "ACTIVE",
+        "startDate": "2026-09-04T10:00:00.000Z",
+        "endDate": "2027-08-04T10:00:00.000Z",
+        "maturityBenefitPercent": 8
+      }
+    ]
+  }
+}
+```
+
+---
+
 ## 💰 Live Gold Rate & Redemptions
 
 * **Get Gold Rate:** `GET /gold-rate/today`
@@ -151,6 +215,18 @@ Users must have `kycStatus == 'APPROVED'` before they can subscribe to gold sche
 * **Redeem Gold:** `POST /gold/redeem`
   * Body: `{ "userSchemeId": "...", "goldQuantity": 1.43 }`
   * Liquidates gold balance into cash payout to user's registered bank account.
+
+---
+
+## 🧾 Download Payment Receipt (PDF & JSON)
+
+* **Download Branded PDF Receipt:**
+  * **Endpoint:** `GET /payments/receipt/:transactionId/download?download=true` *(or `GET /payments/:id/receipt`)*
+  * **Headers:** `Authorization: Bearer <accessToken>`
+  * **Response:** Streams `application/pdf` binary with `Content-Disposition: attachment; filename="receipt-INV-2026-xxxxx.pdf"`.
+* **Get JSON Receipt Metadata:**
+  * **Endpoint:** `GET /payments/receipt/:transactionId`
+  * Returns JSON breakdown with amount, gold rate, gold weight, GST, invoice number, and payment timestamp.
 
 ---
 

@@ -77,6 +77,7 @@ app.get(['/api/v1', '/api/v1/health'], (req, res) => {
 // API Routes mounting
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/users', userRoutes); // Alias for Flutter / Spec compatibility
 app.use('/api/v1/schemes', schemeRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/gold-rate', goldRoutes); // handles /today

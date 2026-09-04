@@ -7,6 +7,7 @@ const upload = require('../../middleware/uploadMiddleware');
 // Protect all routes
 router.use(protect);
 
+router.get('/dashboard', userController.getDashboard);
 router.get('/profile', userController.getProfile);
 router.get('/kyc/status', userController.getKycStatus);
 

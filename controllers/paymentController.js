@@ -6,6 +6,7 @@ const Joi = require('joi');
 const crypto = require('crypto');
 const helpers = require('../utils/helpers');
 const { sendPaymentSuccessWhatsApp, sendPaymentReminderWhatsApp } = require('../utils/whatsappService');
+const { generateReceiptPdf } = require('../utils/receiptService');
 
 // Input Validation Schemas
 const initializeSchema = Joi.object({
@@ -407,6 +408,10 @@ const getReceipt = async (req, res, next) => {
       });
     }
 
+    if (req.query.format === 'pdf' || req.query.download === 'true') {
+      return downloadReceiptPdf(req, res, next);
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Receipt retrieved successfully',
@@ -433,10 +438,87 @@ const getReceipt = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Download branded PDF receipt for an installment payment
+ * @route   GET /api/v1/payments/receipt/:transactionId/download
+ *          GET /api/v1/payments/:id/receipt
+ * @access  Private
+ */
+const downloadReceiptPdf = async (req, res, next) => {
+  try {
+    const identifier = req.params.transactionId || req.params.id;
+
+    if (!identifier) {
+      return res.status(400).json({
+        success: false,
+        message: 'Transaction ID or receipt ID is required',
+        errorCode: 'VALIDATION_ERROR',
+        data: null
+      });
+    }
+
+    const query = {
+      $or: [
+        { transactionId: identifier },
+        { invoiceNo: identifier }
+      ]
+    };
+
+    if (identifier.match(/^[0-9a-fA-F]{24}$/)) {
+      query.$or.push({ _id: identifier });
+    }
+
+    const payment = await Payment.findOne(query)
+      .populate('userId')
+      .populate({
+        path: 'userSchemeId',
+        populate: { path: 'schemeId' }
+      });
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment receipt not found',
+        errorCode: 'RECEIPT_NOT_FOUND',
+        data: null
+      });
+    }
+
+    // Security guard: Customers may only download their own receipts
+    if (req.user && req.user.role !== 'admin' && req.user.role !== 'super_admin') {
+      const paymentOwnerId = payment.userId?._id?.toString() || payment.userId?.toString();
+      if (paymentOwnerId !== req.user.id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not authorized to download this receipt',
+          errorCode: 'UNAUTHORIZED_ACCESS',
+          data: null
+        });
+      }
+    }
+
+    const latestRate = await GoldRate.findOne().sort({ lastUpdated: -1 });
+    const pdfBuffer = await generateReceiptPdf(payment, latestRate);
+
+    const receiptNo = payment.invoiceNo || payment.transactionId || `REC-${String(payment._id).slice(-8).toUpperCase()}`;
+    const filename = `receipt-${receiptNo}.pdf`;
+    const disposition = req.query.download === 'true' ? 'attachment' : 'inline';
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    return res.status(200).send(pdfBuffer);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDues,
   initializePayment,
   verifyPayment,
   getPaymentHistory,
-  getReceipt
+  getReceipt,
+  downloadReceiptPdf
 };
+

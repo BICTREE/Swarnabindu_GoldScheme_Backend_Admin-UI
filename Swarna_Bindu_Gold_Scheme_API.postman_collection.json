@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:5001/api/v1",
+      "value": "https://scheme.bindujewellery.com/api/v1",
       "type": "string"
     },
     {
@@ -288,6 +288,55 @@
           "name": "Profile & KYC",
           "description": "Client profile details, dynamic dashboard savings valuation metrics, and step-by-step KYC submission endpoints. Requires {{clientToken}}.",
           "item": [
+            {
+              "name": "0. Get Unified Customer Dashboard",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/dashboard",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "dashboard"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Complete Aggregated Dashboard",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/user/dashboard"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"User dashboard retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"user\": {\n      \"id\": \"609b...\",\n      \"mobileNumber\": \"+919876543210\",\n      \"fullName\": \"John Mathew\",\n      \"email\": \"john@gmail.com\",\n      \"profilePicture\": null,\n      \"kycStatus\": \"APPROVED\",\n      \"isVerified\": true\n    },\n    \"goldRate\": {\n      \"rate22K_per_g\": 7000,\n      \"rate24K_per_8g\": 56000,\n      \"ratePerGram24K\": 7000,\n      \"ratePerGram22K\": 7000,\n      \"currency\": \"INR\",\n      \"lastUpdated\": \"2026-09-04T10:00:00.000Z\"\n    },\n    \"summary\": {\n      \"totalSchemes\": 1,\n      \"activeSchemes\": 1,\n      \"redeemedSchemes\": 0,\n      \"totalGramsSaved\": 0.714,\n      \"totalAmountPaid\": 5000,\n      \"currentGoldValue\": 4998,\n      \"nextInstallmentDue\": 5000,\n      \"nextDueDate\": \"2026-10-05\"\n    },\n    \"portfolio\": [\n      {\n        \"userSchemeId\": \"60b94c...\",\n        \"schemeId\": \"60a81d...\",\n        \"schemeName\": \"Swarna Bindu Popular\",\n        \"monthlyInvestment\": 5000,\n        \"durationMonths\": 11,\n        \"installmentsPaid\": 1,\n        \"totalInstallments\": 11,\n        \"remainingInstallments\": 10,\n        \"progressPercent\": 9,\n        \"goldAccumulated\": 0.714,\n        \"goalGoldGram\": 7.857,\n        \"totalAmountPaid\": 5000,\n        \"status\": \"ACTIVE\",\n        \"startDate\": \"2026-09-04T10:00:00.000Z\",\n        \"endDate\": \"2027-08-04T10:00:00.000Z\",\n        \"maturityBenefitPercent\": 8\n      }\n    ]\n  }\n}"
+                }
+              ]
+            },
             {
               "name": "1. Get Profile & Aggregated Savings",
               "request": {
@@ -1457,6 +1506,65 @@
                     }
                   ],
                   "body": "{\n  \"success\": true,\n  \"message\": \"Receipt retrieved successfully\",\n  \"errorCode\": null,\n  \"data\": {\n    \"receipt\": {\n      \"schemeName\": \"Swarna Bindu Popular\",\n      \"schemeStatus\": \"ACTIVE\",\n      \"installmentType\": \"CURRENT_MONTH\",\n      \"paidAt\": \"2026-07-08T12:00:00.000Z\",\n      \"amountPaid\": 5000,\n      \"gst\": 0,\n      \"convenienceFee\": 0,\n      \"totalPaid\": 5000,\n      \"transactionId\": \"TXN918...\",\n      \"invoiceNo\": \"INV-2026-1025\",\n      \"razorpayOrderId\": \"order_abc123xyz\",\n      \"paymentMethod\": \"UPI - Google Pay\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "6. Download Branded Receipt PDF",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/receipt/TXN918.../download?download=true",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payments",
+                    "receipt",
+                    "TXN918...",
+                    "download"
+                  ],
+                  "query": [
+                    {
+                      "key": "download",
+                      "value": "true"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success - Streams Branded PDF Document",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/payments/receipt/TXN918.../download?download=true"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/pdf"
+                    },
+                    {
+                      "key": "Content-Disposition",
+                      "value": "attachment; filename=\"receipt-INV-2026-10252.pdf\""
+                    }
+                  ]
                 }
               ]
             }

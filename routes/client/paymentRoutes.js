@@ -10,5 +10,7 @@ router.post('/initialize', paymentController.initializePayment);
 router.post('/verify', paymentController.verifyPayment);
 router.get('/history', paymentController.getPaymentHistory);
 router.get('/receipt/:transactionId', paymentController.getReceipt);
+router.get('/receipt/:transactionId/download', paymentController.downloadReceiptPdf);
+router.get('/:id/receipt', paymentController.downloadReceiptPdf);
 
 module.exports = router;

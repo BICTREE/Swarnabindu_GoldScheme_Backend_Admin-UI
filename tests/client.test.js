@@ -57,6 +57,7 @@ describe('Swarna Bindu Client REST API Integration Tests', () => {
   let schemeId = '';
   let userSchemeId = '';
   let transactionId = '';
+  let txnString = '';
   let notificationId = '';
 
   // --- AUTHENTICATION TESTS ---
@@ -494,6 +495,7 @@ describe('Swarna Bindu Client REST API Integration Tests', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.payment.status).toBe('SUCCESSFUL');
       expect(res.body.data.userScheme.goldAccumulated).toBeGreaterThan(0); // 5000 / 7000 = ~0.714 g
+      txnString = res.body.data.payment.transactionId;
     });
 
     it('should get payment history logs', async () => {
@@ -504,6 +506,141 @@ describe('Swarna Bindu Client REST API Integration Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.history.length).toBeGreaterThan(0);
+    });
+
+    it('should retrieve payment receipt metadata as JSON', async () => {
+      const res = await request(app)
+        .get(`/api/v1/payments/receipt/${txnString}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.receipt).toHaveProperty('amountPaid', 5000);
+      expect(res.body.data.receipt).toHaveProperty('schemeName', 'Swarna Bindu Popular');
+    });
+
+    it('should download branded payment receipt PDF via /receipt/:transactionId/download', async () => {
+      const res = await request(app)
+        .get(`/api/v1/payments/receipt/${txnString}/download`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          res.data = Buffer.from([]);
+          res.on('data', (chunk) => { res.data = Buffer.concat([res.data, chunk]); });
+          res.on('end', () => callback(null, res.data));
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['content-disposition']).toContain('filename="receipt-');
+      expect(Buffer.isBuffer(res.body)).toBe(true);
+      expect(res.body.slice(0, 5).toString('ascii')).toBe('%PDF-');
+    });
+
+    it('should download payment receipt PDF as attachment with ?download=true', async () => {
+      const res = await request(app)
+        .get(`/api/v1/payments/receipt/${txnString}/download?download=true`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          res.data = Buffer.from([]);
+          res.on('data', (chunk) => { res.data = Buffer.concat([res.data, chunk]); });
+          res.on('end', () => callback(null, res.data));
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['content-disposition']).toContain('attachment');
+      expect(Buffer.isBuffer(res.body)).toBe(true);
+    });
+
+    it('should download payment receipt PDF via /:id/receipt', async () => {
+      const res = await request(app)
+        .get(`/api/v1/payments/${transactionId}/receipt`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .buffer()
+        .parse((res, callback) => {
+          res.data = Buffer.from([]);
+          res.on('data', (chunk) => { res.data = Buffer.concat([res.data, chunk]); });
+          res.on('end', () => callback(null, res.data));
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(Buffer.isBuffer(res.body)).toBe(true);
+      expect(res.body.slice(0, 5).toString('ascii')).toBe('%PDF-');
+    });
+
+    it('should prevent unauthorized users from downloading other user receipt (IDOR protection)', async () => {
+      await request(app)
+        .post('/api/v1/auth/send-otp')
+        .send({ mobileNumber: '+919999988888' });
+      const verifyRes = await request(app)
+        .post('/api/v1/auth/verify-otp')
+        .send({ mobileNumber: '+919999988888', otp: '123456' });
+      const otherUserToken = verifyRes.body.data.accessToken;
+
+      const res = await request(app)
+        .get(`/api/v1/payments/receipt/${txnString}/download`)
+        .set('Authorization', `Bearer ${otherUserToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.errorCode).toBe('UNAUTHORIZED_ACCESS');
+    });
+
+    it('should return 404 when downloading non-existent receipt', async () => {
+      const res = await request(app)
+        .get('/api/v1/payments/receipt/TXN999999999999/download')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
+      expect(res.body.errorCode).toBe('RECEIPT_NOT_FOUND');
+    });
+  });
+
+  // --- USER DASHBOARD AGGREGATION TESTS ---
+  describe('User Dashboard Aggregation Endpoint', () => {
+    it('should fail getting dashboard without auth token', async () => {
+      const res = await request(app).get('/api/v1/user/dashboard');
+      expect(res.status).toBe(401);
+    });
+
+    it('should get complete customer dashboard in a single call with populated savings & portfolio', async () => {
+      const res = await request(app)
+        .get('/api/v1/user/dashboard')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('user');
+      expect(res.body.data.user).toHaveProperty('mobileNumber', testMobile);
+      expect(res.body.data).toHaveProperty('goldRate');
+      expect(res.body.data.goldRate).toHaveProperty('ratePerGram24K', 7000);
+      expect(res.body.data).toHaveProperty('summary');
+      expect(res.body.data.summary.activeSchemes).toBe(1);
+      expect(res.body.data.summary.totalAmountPaid).toBe(5000);
+      expect(res.body.data.summary.totalGramsSaved).toBeGreaterThan(0);
+      expect(res.body.data.summary.currentGoldValue).toBeGreaterThan(0);
+      expect(res.body.data).toHaveProperty('portfolio');
+      expect(res.body.data.portfolio.length).toBe(1);
+      expect(res.body.data.portfolio[0].schemeName).toBe('Swarna Bindu Popular');
+      expect(res.body.data.portfolio[0].status).toBe('ACTIVE');
+      expect(res.body.data.portfolio[0].installmentsPaid).toBe(1);
+      expect(res.body.data.portfolio[0].totalInstallments).toBe(11);
+      expect(res.body.data.portfolio[0].remainingInstallments).toBe(10);
+    });
+
+    it('should also work via /api/v1/users/dashboard route alias', async () => {
+      const res = await request(app)
+        .get('/api/v1/users/dashboard')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('user');
+      expect(res.body.data).toHaveProperty('portfolio');
     });
   });
 
